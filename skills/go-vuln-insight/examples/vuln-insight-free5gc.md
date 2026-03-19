@@ -110,6 +110,16 @@ func (a *MobileIdentity5GS) GetSUCI() (string, error) {
 
 NAS协议解码函数在访问字节切片元素前未验证Buffer长度，当接收到恶意构造的短长度NAS消息时触发Go运行时panic。
 
+#### 漏洞利用
+
+- **攻击向量**：攻击者需处于可向AMF发送NGAP消息的网络位置（gNB侧或伪造gNB）
+- **利用条件**：AMF已完成NG Setup流程，攻击者可通过SCTP连接发送NGAP消息
+- **PoC要点**：（Issue #835提供了完整PoC hex）
+  1. 通过SCTP连接向AMF发送NGSetupRequest完成NG Setup
+  2. 构造InitialUEMessage，其中NAS-PDU包含畸形5GS Mobile Identity（Buffer长度=7但解码需要>=8字节）
+  3. 发送该NGAP消息，AMF解析NAS-PDU时在`GetSUCI()`中触发`index out of range [7] with length 7` panic
+- **影响**：AMF进程崩溃（DoS），所有已接入UE断开连接，新UE无法注册
+
 ---
 
 ### VULN-002: AMF 5GS Mobile Identity索引越界（未修复重现）
@@ -159,9 +169,39 @@ func (a *MobileIdentity5GS) GetSUCI() string {
 }
 ```
 
+#### 修复代码
+
+> 状态：暂无完整官方修复（Issue #856指出PR #747的修复不完整）。建议修复方案：
+
+```go
+// nasType/NAS_MobileIdentity5GS.go — 建议修复
+func (a *MobileIdentity5GS) GetSUCI() (string, error) {
+    // 对所有解码分支（含奇数/偶数MSIN长度）统一前置长度校验
+    if len(a.Buffer) < minSUCIBufferLen {
+        return "", fmt.Errorf("SUCI buffer too short: %d", len(a.Buffer))
+    }
+    // 在计算schemeOutputStart后再次校验
+    if schemeOutputStart >= len(a.Buffer) {
+        return "", fmt.Errorf("schemeOutputStart %d exceeds buffer length %d",
+            schemeOutputStart, len(a.Buffer))
+    }
+    // ...
+}
+```
+
 #### 根因分析
 
 nas PR #43的修复未覆盖所有边界条件。当MSIN以`1`结尾时触发奇数长度解码路径，该路径的长度校验与偶数路径不一致，仍然存在越界访问风险。此外，主仓库子模块版本引用可能未及时更新。
+
+#### 漏洞利用
+
+- **攻击向量**：与VULN-001相同，攻击者需通过SCTP连接向AMF发送NGAP消息
+- **利用条件**：AMF已完成NG Setup；需使用v4.2.1版本（声称已修复但实际未完整修复）
+- **PoC要点**：（Issue #856提供了完整hex）
+  1. 发送NGSetupRequest：`00150044000004001b00090002f839...`
+  2. 发送InitialUEMessage，其中5GS Mobile Identity长度字段被缩短且MSIN以`1`结尾：`000f40480000050055000200010026001a197e00417900060102f839...`
+  3. 可能需要重复发送多次才能触发（取决于MSIN奇偶性的解码路径选择）
+- **影响**：AMF worker崩溃，阻止其他UE连接
 
 ---
 
@@ -203,9 +243,12 @@ func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
 }
 ```
 
-#### 安全修复模式
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
 
 ```go
+// internal/pfcp/handler/handler.go — 建议修复
 func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
     req := msg.Body.(pfcp.SessionReportRequest)
     if req.ReportType == nil {
@@ -223,6 +266,21 @@ func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
     }
 }
 ```
+
+#### 根因分析
+
+PFCP消息处理函数直接对Mandatory IE字段进行解引用而未做nil检查。根据3GPP TS 29.244，ReportType是SessionReportRequest的Mandatory IE，但恶意对端可以发送不合规消息。同时PFCP handler运行在goroutine中且无defer recover，panic直接终止进程。
+
+#### 漏洞利用
+
+- **攻击向量**：攻击者需处于PFCP网络平面（N4接口），可向SMF发送UDP数据包（端口8805）
+- **利用条件**：SMF与攻击者之间已建立PFCP Association；存在活跃的PDU Session（UpCnxState=DEACTIVATED）
+- **PoC要点**：（Issue #804提供了完整Go语言PoC）
+  1. 实现rogue UPF，与SMF完成PFCP Association Setup
+  2. 等待SMF建立PDU Session
+  3. 构造不含ReportType IE的PFCP SessionReportRequest消息并发送
+  4. SMF在handler.go:132处panic，进程终止
+- **影响**：SMF进程崩溃（DoS），所有PDU Session中断，新Session无法建立
 
 ---
 
@@ -266,6 +324,37 @@ func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
     }
 }
 ```
+
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// internal/pfcp/handler/handler.go — 建议修复
+if req.ReportType.Dldr {
+    if req.DownlinkDataReport == nil {
+        log.Warn("ReportType.DLDR set but DownlinkDataReport IE missing")
+        sendErrorResponse(msg, pfcp.CauseMandatoryIEMissing)
+        return
+    }
+    dsInfo := req.DownlinkDataReport.DownlinkDataServiceInformation
+    // ...
+}
+```
+
+#### 根因分析
+
+PFCP协议中当ReportType的DLDR标志置位时，DownlinkDataReport IE按规范为Conditional Mandatory（条件必选）。代码仅检查了ReportType标志，但未验证关联的条件必选IE是否存在，导致nil dereference。
+
+#### 漏洞利用
+
+- **攻击向量**：PFCP网络平面（N4接口），UDP端口8805
+- **利用条件**：与SMF建立PFCP Association
+- **PoC要点**：（Issue #805提供了完整Go语言PoC）
+  1. 实现rogue UPF与SMF建立PFCP Association
+  2. 构造SessionReportRequest：设置ReportType.DLDR=true，但不包含DownlinkDataReport IE
+  3. 发送该消息，SMF在handler.go:135处panic
+- **影响**：SMF进程崩溃（DoS）
 
 ---
 
@@ -319,6 +408,38 @@ func (c *SMContext) HandleReports(reports []*pfcp.UsageReport) {
 }
 ```
 
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// internal/context/pfcp_reports.go — 建议修复
+func identityTriggerType(usageReport *pfcp.UsageReport) (string, error) {
+    if usageReport.UsageReportTrigger == nil {
+        return "", fmt.Errorf("UsageReportTrigger IE missing")
+    }
+    usarTrigger := usageReport.UsageReportTrigger
+    if usarTrigger.Volth {
+        return "volume_threshold", nil
+    }
+    // ...
+}
+```
+
+#### 根因分析
+
+PFCP UsageReport IE内部的UsageReportTrigger子IE按规范为Mandatory，但代码未对嵌套IE做nil检查。Go语言中嵌套结构体字段为指针类型时，任何一层为nil都会导致panic。
+
+#### 漏洞利用
+
+- **攻击向量**：PFCP网络平面（N4接口），UDP端口8805
+- **利用条件**：与SMF建立PFCP Association，存在活跃PDU Session
+- **PoC要点**：（Issue #814提供了完整Go语言PoC）
+  1. 实现rogue UPF与SMF建立Association
+  2. 构造SessionReportRequest：设置ReportType.USAR=1，包含UsageReport IE但省略UsageReportTrigger子IE
+  3. 发送消息，SMF在pfcp_reports.go:77处panic
+- **影响**：SMF进程崩溃（DoS）
+
 ---
 
 ### VULN-006: SMF PFCP SessionReportRequest缺失VolumeMeasurement致崩溃
@@ -360,6 +481,38 @@ func (c *SMContext) HandleReports(reports []*pfcp.UsageReport) {
     }
 }
 ```
+
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// internal/context/pfcp_reports.go — 建议修复
+func (c *SMContext) HandleReports(reports []*pfcp.UsageReport) {
+    for _, report := range reports {
+        if report.VolumeMeasurement == nil {
+            log.Warn("UsageReport missing VolumeMeasurement IE, skipping")
+            continue
+        }
+        totalVolume := report.VolumeMeasurement.TotalVolume
+        // ...
+    }
+}
+```
+
+#### 根因分析
+
+与VULN-005同源：PFCP UsageReport内部嵌套IE按规范应存在但代码未做防御性检查。VolumeMeasurement在特定条件下为Conditional Optional，但代码假设其始终存在。
+
+#### 漏洞利用
+
+- **攻击向量**：PFCP网络平面（N4接口），UDP端口8805
+- **利用条件**：与SMF建立PFCP Association，存在活跃PDU Session
+- **PoC要点**：（Issue #806提供了完整Go语言PoC）
+  1. 实现rogue UPF
+  2. 构造SessionReportRequest：设置ReportType.Usar=true，包含UsageReport IE但省略VolumeMeasurement子IE
+  3. 发送消息，SMF在pfcp_reports.go:23处panic
+- **影响**：SMF进程崩溃（DoS）
 
 ---
 
@@ -405,6 +558,38 @@ func establishPfcpSession(ctx *SMContext, rsp *pfcp.SessionEstablishmentResponse
 }
 ```
 
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// internal/sbi/processor/datapath.go — 建议修复
+func establishPfcpSession(ctx *SMContext, rsp *pfcp.SessionEstablishmentResponse) error {
+    if rsp.Cause == nil {
+        return fmt.Errorf("SessionEstablishmentResponse missing mandatory Cause IE")
+    }
+    if rsp.Cause.CauseValue == pfcp.CauseRequestAccepted {
+        // ...
+    } else {
+        return fmt.Errorf("establishment rejected: cause=%d", rsp.Cause.CauseValue)
+    }
+}
+```
+
+#### 根因分析
+
+PFCP Response消息的Cause IE按3GPP TS 29.244为Mandatory，但恶意UPF可省略。代码在if条件判断中直接解引用`rsp.Cause`指针而无前置nil检查。
+
+#### 漏洞利用
+
+- **攻击向量**：PFCP网络平面（N4接口），攻击者实现rogue UPF
+- **利用条件**：rogue UPF与SMF完成PFCP Association Setup
+- **PoC要点**：（Issue #815提供了完整Go语言PoC）
+  1. 实现rogue UPF PFCP服务器，正常完成Association Setup
+  2. 收到SessionEstablishmentRequest后，回复SessionEstablishmentResponse：包含NodeID和UPFSEID但不包含Cause IE
+  3. SMF在datapath.go:160处panic
+- **影响**：SMF进程崩溃（DoS）
+
 ---
 
 ### VULN-008: SMF PFCP SessionEstablishmentResponse缺失NodeID IE致崩溃
@@ -444,6 +629,38 @@ func handleEstablishmentResponse(rsp *pfcp.SessionEstablishmentResponse) {
     }
 }
 ```
+
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// internal/sbi/processor/datapath.go — 建议修复
+func handleEstablishmentResponse(rsp *pfcp.SessionEstablishmentResponse) {
+    if rsp.UPFSEID != nil {
+        if rsp.NodeID == nil {
+            log.Error("SessionEstablishmentResponse has UPFSEID but missing NodeID")
+            return
+        }
+        upfIP := rsp.NodeID.ResolveNodeIdToIp()
+        // ...
+    }
+}
+```
+
+#### 根因分析
+
+代码假设当UPFSEID IE存在时NodeID IE也一定存在，但这是不安全的假设。恶意UPF可以构造任意IE组合。PFCP Response中多个Mandatory IE应当独立检查。
+
+#### 漏洞利用
+
+- **攻击向量**：PFCP网络平面（N4接口），攻击者实现rogue UPF
+- **利用条件**：rogue UPF与SMF完成PFCP Association Setup
+- **PoC要点**：（Issue #816提供了完整Go语言PoC）
+  1. 实现rogue UPF，正常完成Association Setup
+  2. 收到SessionEstablishmentRequest后，回复SessionEstablishmentResponse：包含UPFSEID但不包含NodeID
+  3. SMF在datapath.go:145处panic
+- **影响**：SMF进程崩溃（DoS）
 
 ---
 
@@ -487,6 +704,40 @@ func handleDeletionResponse(rsp *pfcp.SessionDeletionResponse) error {
     return nil
 }
 ```
+
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// internal/sbi/processor/datapath.go — 建议修复
+func handleDeletionResponse(rsp *pfcp.SessionDeletionResponse) error {
+    if rsp.Cause == nil {
+        return fmt.Errorf("SessionDeletionResponse missing mandatory Cause IE")
+    }
+    if rsp.Cause.CauseValue == pfcp.CauseRequestAccepted {
+        // ...
+    } else {
+        log.Warnf("session deletion not accepted: %d", rsp.Cause.CauseValue)
+    }
+    return nil
+}
+```
+
+#### 根因分析
+
+与VULN-007同源：PFCP Response消息的Cause IE为Mandatory但代码未做nil检查。所有PFCP Response处理路径中对Cause的访问都缺少防御性验证。
+
+#### 漏洞利用
+
+- **攻击向量**：PFCP网络平面（N4接口），攻击者实现rogue UPF
+- **利用条件**：rogue UPF与SMF完成PFCP Association，存在活跃PDU Session
+- **PoC要点**：（Issue #817提供了完整PoC描述）
+  1. 实现rogue UPF
+  2. 等待SMF发起Session Deletion（如PDU Session释放流程）
+  3. 回复SessionDeletionResponse：不包含Cause IE
+  4. SMF在datapath.go:478处panic
+- **影响**：SMF进程崩溃（DoS）
 
 ---
 
@@ -538,6 +789,43 @@ func provisioningOfTrafficRoutingInfo(smPolicy *SmPolicy, appID string,
     // ...
 }
 ```
+
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// NFs/pcf/internal/sbi/processor/policyauthorization.go — 建议修复
+func (p *Processor) handleCreateAppSession(req *models.AppSessionContext) {
+    ascReqData := req.AscReqData
+    if hasSuppFeat(ascReqData.SuppFeat, TrafficRoutingFeature) {
+        routeReq := ascReqData.AfRoutReq
+        if routeReq == nil {
+            // suppFeat启用了流量路由但未提供路由请求，返回错误
+            problemDetails := &models.ProblemDetails{
+                Status: http.StatusBadRequest,
+                Detail: "AfRoutReq required when traffic routing feature is enabled",
+            }
+            return problemDetails
+        }
+        provisioningOfTrafficRoutingInfo(smPolicy, appID, routeReq, ascReqData.MedComponents)
+    }
+}
+```
+
+#### 根因分析
+
+`suppFeat`标志与对应请求字段之间缺少一致性校验。代码检查了feature flag是否启用，但未验证该feature所依赖的数据字段是否在请求中提供。合法的请求可以设置`suppFeat="1"`而不附带`AfRoutReq`，暴露了输入验证的不完整性。
+
+#### 漏洞利用
+
+- **攻击向量**：SBI接口（HTTP/2），需要有效的npcf-policyauthorization service token
+- **利用条件**：攻击者持有有效OAuth2 token（如已注册的AF）
+- **PoC要点**：（Issue #879提供了验证步骤）
+  1. 获取有效的npcf-policyauthorization token
+  2. 发送POST `/npcf-policyauthorization/v1/app-sessions`，请求体包含`suppFeat="1"`、有效的`notifUri`/`ueIpv4`/`dnn`/`medComponents`，但不包含`AfRoutReq`
+  3. PCF在`provisioningOfTrafficRoutingInfo()`中panic，返回500
+- **影响**：PCF app-session创建端点拒绝服务；Gin recovery可能保持容器存活但endpoint持续不可用
 
 ---
 
@@ -594,6 +882,44 @@ func (c *AMFContext) FindAMFStatusSubscription(id string) (SubscriptionData, boo
 }
 ```
 
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// NFs/amf/internal/context/context.go — 建议修复：统一存储类型 + comma-ok断言
+func (c *AMFContext) AddSubscription(id string, sub SubscriptionData) {
+    c.AMFStatusSubscriptions.Store(id, &sub)  // 统一使用指针类型
+}
+
+func (c *AMFContext) FindAMFStatusSubscription(id string) (*SubscriptionData, bool) {
+    val, ok := c.AMFStatusSubscriptions.Load(id)
+    if !ok {
+        return nil, false
+    }
+    sub, ok := val.(*SubscriptionData)  // comma-ok模式防止panic
+    if !ok {
+        log.Warnf("unexpected type in subscription store: %T", val)
+        return nil, false
+    }
+    return sub, true
+}
+```
+
+#### 根因分析
+
+Go的`sync.Map`存储`interface{}`类型值。CRUD操作分散在不同文件中，Create存储值类型`SubscriptionData`，Update存储指针类型`*SubscriptionData`，类型不一致。Delete路径的类型断言`val.(SubscriptionData)`在值为指针类型时panic。这是Go类型系统中`interface{}`使用的常见陷阱。
+
+#### 漏洞利用
+
+- **攻击向量**：SBI接口（HTTP/2），需要有效的namf-comm service token
+- **利用条件**：攻击者持有有效namf-comm token
+- **PoC要点**：（Issue #876提供了验证步骤）
+  1. `POST /namf-comm/v1/subscriptions` 创建订阅 → `201 Created`
+  2. `PUT /namf-comm/v1/subscriptions/{id}` 更新同一订阅 → `202 Accepted`（此步将map中的值类型替换为指针类型）
+  3. `DELETE /namf-comm/v1/subscriptions/{id}` 删除订阅 → `500 Internal Server Error`（panic）
+- **影响**：AMF订阅管理endpoint拒绝服务
+
 ---
 
 ### VULN-012: UPF PFCP会话资源耗尽拒绝服务
@@ -637,6 +963,46 @@ func (n *LocalNode) NewSess(seid uint64) *Session {
     return sess
 }
 ```
+
+#### 修复代码
+
+> 来源：free5gc/go-upf PR #98（部分修复）
+
+```go
+// node.go (go-upf) — 修复方案：添加会话数量上限
+const MaxSessions = 10000
+
+func (n *LocalNode) NewSess(seid uint64) (*Session, error) {
+    n.mu.Lock()
+    defer n.mu.Unlock()
+    if len(n.sess) >= MaxSessions {
+        return nil, fmt.Errorf("session limit reached: %d", MaxSessions)
+    }
+    sess := &Session{
+        SEID:   seid,
+        PDRs:   make(map[uint16]*PDR),
+        FARs:   make(map[uint32]*FAR),
+        URRIDs: make(map[uint32]*URRInfo),
+    }
+    n.sess = append(n.sess, sess)
+    return sess, nil
+}
+```
+
+#### 根因分析
+
+资源创建函数缺少准入控制和数量上限。PFCP协议本身不限制会话创建数量，但实现中应当设置合理上限以防御资源耗尽攻击。同时缺少PFCP peer的速率限制和可疑行为检测。
+
+#### 漏洞利用
+
+- **攻击向量**：PFCP网络平面（N4接口），UDP端口8805
+- **利用条件**：攻击者可向UPF发送PFCP消息（无需Association的情况下取决于实现）
+- **PoC要点**：（Issue #819提供了完整Go语言PoC）
+  1. 与UPF建立PFCP Association
+  2. 循环发送SessionEstablishmentRequest，每次使用不同的SEID
+  3. 不发送对应的SessionDeletionRequest
+  4. UPF内存持续增长，最终触发OOM killer
+- **影响**：UPF进程被OOM killer终止（DoS），所有用户面数据转发中断
 
 ---
 
@@ -703,6 +1069,52 @@ func (s *Server) registerRoutes() {
 }
 ```
 
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// NFs/nrf/internal/sbi/server.go — 建议修复
+func (s *Server) registerRoutes() {
+    nfmGroup := s.router.Group("/nnrf-nfm/v1")
+    // 所有操作都经过认证中间件
+    nfmAuth := nfmGroup.Group("", AuthMiddleware("nnrf-nfm"))
+    nfmAuth.PUT("/nf-instances/:nfInstanceId", s.RegisterNFInstance)
+    nfmAuth.PATCH("/nf-instances/:nfInstanceId", OwnershipCheck(), s.UpdateNFInstance)
+    nfmAuth.DELETE("/nf-instances/:nfInstanceId", OwnershipCheck(), s.DeregisterNFInstance)
+}
+
+// 资源所有权检查中间件
+func OwnershipCheck() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        callerNfId := c.GetString("callerNfInstanceId")
+        targetNfId := c.Param("nfInstanceId")
+        if callerNfId != targetNfId {
+            c.AbortWithStatusJSON(403, models.ProblemDetails{
+                Status: 403, Detail: "cannot operate on other NF instance",
+            })
+            return
+        }
+        c.Next()
+    }
+}
+```
+
+#### 根因分析
+
+NRF的OAuth2授权粒度过粗：仅检查token的service scope（`nnrf-nfm`），不检查请求者是否有权操作目标资源。3GPP TS 29.510规范要求NF只能管理自身的NF profile，但代码未实现此约束。此外RegisterNFInstance端点完全缺少认证。
+
+#### 漏洞利用
+
+- **攻击向量**：SBI接口（HTTP/2），NRF服务端口
+- **利用条件**：攻击者持有任意有效的nnrf-nfm scope token（任何已注册NF均可获取）
+- **PoC要点**：
+  1. 以NF-A身份获取nnrf-nfm token
+  2. 越权操作一：`PUT /nf-instances/{NF-B-id}` 注册/覆盖NF-B的profile（无需认证）
+  3. 越权操作二：`PATCH /nf-instances/{NF-B-id}` 使用NF-A的token修改NF-B的profile
+  4. 越权操作三：`DELETE /nf-instances/{NF-B-id}` 使用NF-A的token注销NF-B
+- **影响**：攻击者可注销任意NF、篡改NF服务发现数据，造成核心网服务中断或流量劫持
+
 ---
 
 ### VULN-014: 多个NF的SBI回调接口缺少认证
@@ -750,6 +1162,40 @@ func (s *Server) registerRoutes() {
     sdmCallbackGroup.POST("/:supi/sdm-subscriptions", s.HandleSDMCallback)  // 无认证
 }
 ```
+
+#### 修复代码
+
+> 状态：暂无官方修复PR。建议修复方案：
+
+```go
+// NFs/nef/internal/sbi/server.go — 建议修复：回调路由添加认证
+func (s *Server) registerRoutes() {
+    // 回调路由也需要认证保护
+    callbackGroup := s.router.Group("/nnef-callback", AuthMiddleware("nnef-callback"))
+    callbackGroup.POST("/notify", s.HandleCallback)
+}
+
+// NFs/udm/internal/sbi/server.go — 建议修复
+func (s *Server) registerRoutes() {
+    sdmCallbackGroup := s.router.Group("/nudm-sdm/v2", AuthMiddleware("nudm-sdm"))
+    sdmCallbackGroup.POST("/:supi/sdm-subscriptions", s.HandleSDMCallback)
+}
+```
+
+#### 根因分析
+
+开发时认为回调接口只被内部NF调用而忽略了认证保护。但在5GC SBA架构中，所有NF间通信都应通过OAuth2认证。回调URL在创建订阅时由调用方指定，攻击者可以直接向回调端点发送伪造请求。
+
+#### 漏洞利用
+
+- **攻击向量**：SBI接口（HTTP/2），直接访问NF的回调端口
+- **利用条件**：攻击者知道目标NF的回调URL（可通过NRF服务发现获取）
+- **PoC要点**：
+  1. 不需要任何token或认证凭据
+  2. 直接向NEF的`/nnef-callback/notify`发送伪造的回调通知
+  3. 或向UDM的`/{supi}/sdm-subscriptions`发送伪造的SDM订阅回调
+  4. NF无条件接受并处理伪造的回调数据
+- **影响**：攻击者可注入虚假的事件通知、伪造订阅数据变更，可能导致业务逻辑错误或数据污染
 
 ---
 
