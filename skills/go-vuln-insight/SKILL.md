@@ -31,7 +31,6 @@ Markdown文件格式示例：
 ```markdown
 # 待分析项目列表
 - [free5gc](https://github.com/free5gc/free5gc)
-- [open5gs](https://github.com/open5gs/open5gs)
 ```
 
 脚本会输出JSON格式的项目列表，包含 `owner`、`repo`、`url` 字段。
