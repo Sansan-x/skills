@@ -2,807 +2,1003 @@
 
 > 项目地址：https://github.com/free5gc/free5gc
 > 分析时间：2026-03-19
-> 漏洞总数：6
-> 攻击模式数：4
+> 漏洞总数：14（抽样分析）
+> 攻击模式数：5
 
 ## 概述
 
-free5gc是一个基于Go语言的开源5G核心网实现，遵循3GPP R15/R16规范。项目涵盖AMF、SMF、UPF、PCF等核心网络功能。由于5GC核心网直接暴露在网络环境中，协议解析层面的安全漏洞可能导致拒绝服务甚至远程代码执行。
+free5gc是一个基于Go语言的开源5G核心网实现，遵循3GPP R15/R16规范。项目涵盖AMF、SMF、UPF、PCF、CHF、UDM、UDR、NRF、NEF等核心网络功能。该项目存在大量安全漏洞，主要集中在三个方面：
 
-本报告基于GitHub Issue及修复PR分析了free5gc项目中已知的安全漏洞，并提取了可用于代码审计的攻击模式。
+1. **PFCP协议消息处理缺陷** — SMF/UPF在处理PFCP消息时缺少mandatory IE的nil检查，导致空指针panic
+2. **NAS协议解析越界** — AMF处理恶意NAS消息时，对5GS Mobile Identity字段长度验证不足
+3. **SBI接口授权缺陷** — 多个NF的HTTP API缺少细粒度的授权检查，导致越权操作
 
 ## 漏洞统计
 
 | 严重程度 | 数量 |
 |----------|------|
-| 高危 (High) | 3 |
-| 中危 (Medium) | 2 |
-| 低危 (Low) | 1 |
+| 高危 (High) | 8 |
+| 中危 (Medium) | 4 |
+| 低危 (Low) | 2 |
 
 | 漏洞类型 | 数量 |
 |----------|------|
-| 缓冲区溢出/数组越界 | 2 |
-| 空指针解引用 | 2 |
-| 输入验证不足 | 1 |
-| 协议合规缺陷 | 1 |
+| 空指针解引用 (nil dereference) | 8 |
+| 数组/切片越界 | 2 |
+| 授权缺陷 (Over-authorization) | 3 |
+| 资源耗尽 (Resource exhaustion) | 1 |
 
 | 影响组件 | 数量 |
 |----------|------|
-| AMF | 2 |
-| SMF | 2 |
-| UPF | 1 |
-| PCF | 1 |
+| SMF | 6 |
+| AMF | 3 |
+| UPF | 2 |
+| PCF | 2 |
+| CHF | 1 |
 
 ---
 
 ## 漏洞详情
 
-### VULN-001: AMF NAS注册请求缓冲区溢出
+### VULN-001: AMF NAS-PDU解析导致索引越界崩溃
 
-- **CVE编号**：CVE-2025-69248
-- **Issue链接**：https://github.com/free5gc/free5gc/issues/743 (示例)
+- **CVE编号**：CVE-2025-69248（关联）
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/835
 - **修复PR**：https://github.com/free5gc/nas/pull/43
-- **严重程度**：高危 (CVSS 7.5)
-- **影响组件**：AMF (接入和移动性管理功能)
-- **影响版本**：free5gc <= 1.4.1
-
-#### 漏洞分析
-
-AMF服务在处理NAS注册请求消息时，未对5GS Mobile Identity字段进行充分的长度验证。攻击者可构造恶意的NAS Registration Request消息，其中包含超长的5GS Mobile Identity字段，触发缓冲区溢出导致AMF进程崩溃（panic），造成拒绝服务。
-
-该漏洞位于NAS协议解析库中的身份标识解码函数，属于协议消息解析层面的输入验证缺失。
-
-#### 漏洞代码
-
-> 来源：free5gc/nas 库（修复PR #43之前的代码）
-
-```go
-// nas/nasType/NAS_5GSMobileIdentity.go（漏洞版本）
-func (a *MobileIdentity5GS) DecodeNASType(wire []byte) error {
-    // 缺少长度验证，直接访问wire切片
-    identityType := wire[0] & 0x07
-    switch identityType {
-    case MobileIdentity5GSTypeSUCI:
-        // 未检查wire长度是否满足SUCI格式最小要求
-        a.SchemeID = wire[3]
-        a.HomeNetworkPublicKeyID = wire[4]
-        // 当wire长度不足时发生越界访问
-        a.SchemeOutput = wire[5:]
-    }
-    return nil
-}
-```
-
-#### 修复代码
-
-> 来源：free5gc/nas PR #43
-
-```go
-// nas/nasType/NAS_5GSMobileIdentity.go（修复版本）
-func (a *MobileIdentity5GS) DecodeNASType(wire []byte) error {
-    if len(wire) < 1 {
-        return fmt.Errorf("5GS Mobile Identity: empty wire")
-    }
-    identityType := wire[0] & 0x07
-    switch identityType {
-    case MobileIdentity5GSTypeSUCI:
-        if len(wire) < 6 {
-            return fmt.Errorf("5GS Mobile Identity SUCI: wire too short, got %d, need at least 6", len(wire))
-        }
-        a.SchemeID = wire[3]
-        a.HomeNetworkPublicKeyID = wire[4]
-        a.SchemeOutput = wire[5:]
-    }
-    return nil
-}
-```
-
-#### 根因分析
-
-NAS协议消息解码函数在访问字节切片之前没有验证输入长度。在Go语言中，切片越界访问会触发运行时panic，导致整个服务进程终止。对于常驻运行的核心网网元，这类panic直接造成拒绝服务。
-
----
-
-### VULN-002: AMF 5GS Mobile Identity数组索引越界
-
-- **CVE编号**：CVE-2025-70121
-- **Issue链接**：https://github.com/free5gc/free5gc/issues/744 (关联)
-- **严重程度**：高危 (CVSS 7.5)
+- **严重程度**：高危
 - **影响组件**：AMF
-- **影响版本**：free5gc v4.0.1
+- **影响版本**：free5gc v4.2.0及之前版本
 
 #### 漏洞分析
 
-AMF组件的`GetSUCI`方法在解析5GS Mobile Identity时，尝试访问一个5元素数组的索引5（第6个元素），导致数组越界panic。攻击者可通过构造特定的NAS注册请求触发此漏洞。
+> 数据来源：Issue #835
+
+AMF在处理NGAP InitialUEMessage中携带的恶意NAS-PDU时，因`MobileIdentity5GS.GetSUCI()`函数对Buffer长度检查不足，直接索引访问超出切片范围的位置，触发`panic: runtime error: index out of range [7] with length 7`。
+
+复现方法：向AMF发送构造的InitialUEMessage NGAP包：
+```
+000f40480000050055000200010026001a197e0041790007
+0102f839000000000000fa0000fa04f0f0f0f00079001350
+02f839000002010002f839000001ed80e778005a40011800
+70400100
+```
 
 #### 漏洞代码
 
+> 来源：free5gc/nas PR #43之前的代码（nasType/NAS_MobileIdentity5GS.go）
+
 ```go
-// 漏洞模式：固定大小数组的越界访问
-func GetSUCI(mobileIdentity []byte) (string, error) {
-    parts := parseMobileIdentity(mobileIdentity)
-    // parts可能仅有5个元素[0..4]，但代码直接访问索引5
-    suci := parts[5]  // panic: index out of range [5] with length 5
-    return suci, nil
+func (a *MobileIdentity5GS) GetSUCI() string {
+    // Buffer长度不足时直接索引访问导致panic
+    // 未检查 len(a.Buffer) 是否满足各字段偏移量要求
+    supiFormat := a.Buffer[0] & 0x70 >> 4
+    // ...多处直接索引a.Buffer[N]
 }
 ```
 
 #### 修复代码
 
-```go
-func GetSUCI(mobileIdentity []byte) (string, error) {
-    parts := parseMobileIdentity(mobileIdentity)
-    if len(parts) < 6 {
-        return "", fmt.Errorf("insufficient mobile identity parts: got %d, need 6", len(parts))
-    }
-    suci := parts[5]
-    return suci, nil
-}
-```
-
-#### 根因分析
-
-代码假设解析结果一定包含足够的元素，未对切片/数组长度进行防御性检查。这是Go语言中常见的数组越界漏洞模式。
-
----
-
-### VULN-003: UPF PFCP协议合规性漏洞
-
-- **CVE编号**：CVE-2025-70123 / CVE-2025-69232
-- **Issue链接**：https://github.com/free5gc/free5gc/issues/745
-- **严重程度**：高危 (CVSS 7.5)
-- **影响组件**：UPF (用户面功能)
-- **影响版本**：go-upf <= v1.2.6
-
-#### 漏洞分析
-
-UPF在处理PFCP Association Setup Request时，未按照3GPP TS 29.244标准验证请求消息的合法性。当收到格式错误的PFCP关联建立请求时，UPF错误地接受了该请求，导致与SMF之间的连接状态不一致。SMF会进入重连循环，造成服务降级。
-
-#### 漏洞代码
+> 来源：free5gc/nas PR #43 `fix: prevent panic in MobileIdentity5GS getters on malformed input`
 
 ```go
-// pfcp消息处理函数 — 缺失协议合规性校验
-func HandlePFCPAssociationSetupRequest(msg *pfcp.Message) {
-    req := msg.Body.(pfcp.AssociationSetupRequest)
-    // 未验证必选IE（Information Element）是否存在
-    // 未验证NodeID格式是否合法
-    // 未验证RecoveryTimeStamp是否在有效范围内
-    nodeID := req.NodeID
-    association := CreateAssociation(nodeID)
-    SendAssociationSetupResponse(association, pfcp.CauseRequestAccepted)
-}
-```
-
-#### 修复代码
-
-```go
-func HandlePFCPAssociationSetupRequest(msg *pfcp.Message) {
-    req := msg.Body.(pfcp.AssociationSetupRequest)
-
-    // 验证必选IE存在性（3GPP TS 29.244 Section 7.4.4.1）
-    if req.NodeID == nil {
-        SendAssociationSetupResponse(nil, pfcp.CauseMandatoryIEMissing)
-        return
+func (a *MobileIdentity5GS) GetMobileIdentity5GSContents() (string, string, error) {
+    if len(a.Buffer) == 0 {
+        return "", "", errors.New("buffer is empty")
     }
-
-    // 验证NodeID格式合法性
-    if err := validateNodeID(req.NodeID); err != nil {
-        SendAssociationSetupResponse(nil, pfcp.CauseInvalidNodeID)
-        return
-    }
-
-    // 验证RecoveryTimeStamp
-    if req.RecoveryTimeStamp == nil {
-        SendAssociationSetupResponse(nil, pfcp.CauseMandatoryIEMissing)
-        return
-    }
-
-    nodeID := req.NodeID
-    association := CreateAssociation(nodeID)
-    SendAssociationSetupResponse(association, pfcp.CauseRequestAccepted)
-}
-```
-
-#### 根因分析
-
-协议处理函数信任了外部输入的完整性和正确性，未按照3GPP规范中的消息格式要求验证必选字段和格式约束。这在电信协议实现中是常见的安全问题。
-
----
-
-### VULN-004: SMF PFCP会话空指针解引用
-
-- **CVE编号**：CVE-2026-1973
-- **严重程度**：中危 (CVSS 5.3)
-- **影响组件**：SMF (会话管理功能)
-- **影响版本**：free5gc <= v4.1.0
-
-#### 漏洞分析
-
-SMF的`establishPfcpSession`函数在建立PFCP会话时，未检查返回的会话对象是否为nil。当UPF返回异常响应时，后续代码对nil指针进行解引用操作，导致SMF panic。
-
-#### 漏洞代码
-
-```go
-func establishPfcpSession(ctx *SMContext) error {
-    session, err := sendPFCPSessionEstablishment(ctx)
-    // err可能为nil但session也可能为nil（部分成功场景）
-    if err != nil {
-        return err
-    }
-    // 当session为nil时，以下操作触发panic
-    ctx.PFCPSessionID = session.SessionID
-    ctx.UPFNodeID = session.NodeID
-    return nil
-}
-```
-
-#### 修复代码
-
-```go
-func establishPfcpSession(ctx *SMContext) error {
-    session, err := sendPFCPSessionEstablishment(ctx)
-    if err != nil {
-        return fmt.Errorf("PFCP session establishment failed: %w", err)
-    }
-    if session == nil {
-        return fmt.Errorf("PFCP session establishment returned nil session")
-    }
-    ctx.PFCPSessionID = session.SessionID
-    ctx.UPFNodeID = session.NodeID
-    return nil
-}
-```
-
-#### 根因分析
-
-Go函数返回值中的错误检查不完整 — 仅检查了error是否为nil，未检查业务返回值是否也可能为nil。这是Go语言中常见的空指针漏洞模式。
-
----
-
-### VULN-005: PCF HandleCreateSmPolicyRequest空指针解引用
-
-- **CVE编号**：CVE-2026-1739
-- **严重程度**：中危 (CVSS 5.3)
-- **影响组件**：PCF (策略控制功能)
-- **影响版本**：PCF <= v1.4.1
-- **修复commit**：df535f5524314620715e842baf9723efbeb481a7
-
-#### 漏洞分析
-
-PCF的`HandleCreateSmPolicyRequest`函数在处理SM策略创建请求时，未对请求体中的嵌套对象进行nil检查，导致空指针解引用。
-
-#### 漏洞代码
-
-```go
-func HandleCreateSmPolicyRequest(request *models.SmPolicyContextData) {
-    // 直接访问可能为nil的嵌套字段
-    subscriberID := request.Supi
-    dnn := request.SliceInfo.Dnn  // SliceInfo可能为nil → panic
-    snssai := request.SliceInfo.SNssai
     // ...
 }
-```
 
-#### 修复代码
-
-```go
-func HandleCreateSmPolicyRequest(request *models.SmPolicyContextData) {
-    if request == nil {
-        // 返回错误响应
-        return
+func (a *MobileIdentity5GS) GetSUCI() (string, error) {
+    if len(a.Buffer) == 0 {
+        return "", fmt.Errorf("empty buffer")
     }
-    subscriberID := request.Supi
-    if request.SliceInfo == nil {
-        // 返回错误响应：缺少必要的SliceInfo
-        return
-    }
-    dnn := request.SliceInfo.Dnn
-    snssai := request.SliceInfo.SNssai
-    // ...
+    // 在每个索引访问前增加长度校验
 }
 ```
 
+#### 根因分析
+
+NAS协议解码函数在访问字节切片元素前未验证Buffer长度，当接收到恶意构造的短长度NAS消息时触发Go运行时panic。
+
 ---
 
-### VULN-006: SMF PFCP SessionReportRequest处理崩溃
+### VULN-002: AMF 5GS Mobile Identity索引越界（未修复重现）
 
-- **CVE编号**：CVE-2026-26025
-- **严重程度**：高危 (CVSS 7.5)
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/856
+- **关联Issue**：#747
+- **修复PR**：https://github.com/free5gc/free5gc/pull/747（子模块hash更新）
+- **严重程度**：高危
+- **影响组件**：AMF
+- **影响版本**：free5gc v4.2.1
+
+#### 漏洞分析
+
+> 数据来源：Issue #856
+
+Issue #747的修复（nas PR #43）被声称已合并，但在v4.2.1版本中通过不同的恶意包仍可触发相同漏洞。恶意Registration Request中包含较短的5GS Mobile Identity长度字段和以`1`结尾的MSIN时，导致AMF worker崩溃。
+
+复现步骤：
+1. 发送NGSetupRequest建立gNB连接
+2. 发送构造的InitialUEMessage（5GS Mobile Identity长度被缩短）
+
+#### 根因分析
+
+子模块版本引用未及时更新，或修复不完整，未覆盖所有边界条件（如MSIN长度为奇数时的解码路径）。
+
+---
+
+### VULN-003: SMF PFCP SessionReportRequest缺失ReportType IE致崩溃
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/804
+- **严重程度**：高危
 - **影响组件**：SMF
-- **影响版本**：SMF <= v1.4.1
+- **影响版本**：free5gc v4.1.0
 
 #### 漏洞分析
 
-SMF在处理格式错误的PFCP SessionReportRequest消息时发生panic，导致SMF进程终止。
+> 数据来源：Issue #804
 
-#### 根因分析
+SMF的`HandlePfcpSessionReportRequest`函数（handler.go:132）在处理PFCP SessionReportRequest时，直接访问`req.ReportType.Dldr`而未检查`req.ReportType`是否为nil。当恶意UPF发送不含ReportType IE的SessionReportRequest时，触发空指针解引用panic。
 
-PFCP消息反序列化后，代码未验证必选字段是否存在即直接使用，当收到格式不合规的消息时触发panic。
+关键代码路径：
+- `handler.HandlePfcpSessionReportRequest`（handler.go:132）
+- PFCP dispatcher在goroutine中运行handler（udp.go:71），**无panic recovery**
+- panic直接导致整个SMF进程终止
+
+#### 漏洞代码
+
+> 来源：Issue #804描述（handler.go约第132行）
+
+```go
+func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
+    req := msg.Body.(pfcp.SessionReportRequest)
+    // 直接访问ReportType字段，未检查nil
+    if req.ReportType.Dldr {  // panic: nil pointer dereference
+        // 处理下行数据报告
+        handleDownlinkDataReport(req.DownlinkDataReport)
+    }
+}
+```
+
+#### 安全修复模式
+
+```go
+func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
+    req := msg.Body.(pfcp.SessionReportRequest)
+    if req.ReportType == nil {
+        log.Warn("SessionReportRequest missing mandatory ReportType IE")
+        sendErrorResponse(msg, pfcp.CauseMandatoryIEMissing)
+        return
+    }
+    if req.ReportType.Dldr {
+        if req.DownlinkDataReport == nil {
+            log.Warn("DLDR set but DownlinkDataReport IE missing")
+            sendErrorResponse(msg, pfcp.CauseMandatoryIEMissing)
+            return
+        }
+        handleDownlinkDataReport(req.DownlinkDataReport)
+    }
+}
+```
+
+---
+
+### VULN-004: SMF PFCP SessionReportRequest缺失DownlinkDataReport IE致崩溃
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/805
+- **严重程度**：高危
+- **影响组件**：SMF
+
+#### 漏洞分析
+
+> 数据来源：Issue #805
+
+当SessionReportRequest的ReportType.DLDR标志置位但消息体中缺少DownlinkDataReport IE时，handler.go:135访问`req.DownlinkDataReport.DownlinkDataServiceInformation`导致nil pointer dereference。
+
+---
+
+### VULN-005: SMF PFCP SessionReportRequest缺失UsageReportTrigger致崩溃
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/814
+- **严重程度**：高危
+- **影响组件**：SMF
+
+#### 漏洞分析
+
+> 数据来源：Issue #814
+
+当SessionReportRequest的ReportType.USAR=1且包含UsageReport IE但缺少UsageReportTrigger子IE时，SMF在`identityTriggerType()`函数（pfcp_reports.go:77）中访问`usarTrigger.Volth`导致nil dereference。
+
+调用链：`HandlePfcpSessionReportRequest` → `SMContext.HandleReports` → `identityTriggerType`
+
+---
+
+### VULN-006: SMF PFCP SessionReportRequest缺失VolumeMeasurement致崩溃
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/806
+- **严重程度**：高危
+- **影响组件**：SMF
+
+#### 漏洞分析
+
+> 数据来源：Issue #806
+
+当SessionReportRequest包含UsageReport IE但缺少VolumeMeasurement子IE时，`SMContext.HandleReports()`（pfcp_reports.go:23）访问`report.VolumeMeasurement.TotalVolume`导致nil dereference。
+
+---
+
+### VULN-007: SMF PFCP SessionEstablishmentResponse缺失Cause IE致崩溃
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/815
+- **严重程度**：高危
+- **影响组件**：SMF
+
+#### 漏洞分析
+
+> 数据来源：Issue #815
+
+恶意UPF回复不含Cause IE的SessionEstablishmentResponse时，SMF在`establishPfcpSession()`中解引用`rsp.Cause`而panic。具体位置：datapath.go:160的else分支。
+
+PoC实现了一个rogue UPF PFCP服务器，正常完成association建立后，在收到SessionEstablishmentRequest时返回不含Cause的Response。
+
+---
+
+### VULN-008: SMF PFCP SessionEstablishmentResponse缺失NodeID IE致崩溃
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/816
+- **严重程度**：高危
+- **影响组件**：SMF
+
+#### 漏洞分析
+
+> 数据来源：Issue #816
+
+恶意UPF回复含UPFSEID但不含NodeID的SessionEstablishmentResponse时，SMF调用`(*pfcpType.NodeID).ResolveNodeIdToIp()`对nil NodeID指针操作，导致panic。位置：datapath.go:145。
+
+---
+
+### VULN-009: SMF PFCP SessionDeletionResponse缺失Cause IE致崩溃
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/817
+- **严重程度**：高危
+- **影响组件**：SMF
+
+#### 漏洞分析
+
+> 数据来源：Issue #817
+
+恶意UPF回复不含Cause IE的SessionDeletionResponse时，SMF在datapath.go:478的else分支中访问`rsp.Cause.CauseValue`导致nil dereference。
+
+---
+
+### VULN-010: PCF POST /app-sessions处理suppFeat=1时panic
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/879
+- **严重程度**：中危
+- **影响组件**：PCF
+
+#### 漏洞分析
+
+> 数据来源：Issue #879
+
+PCF的`POST /npcf-policyauthorization/v1/app-sessions`在请求包含`suppFeat="1"`（启用流量路由支持）但不含`AfRoutReq`时，调用`provisioningOfTrafficRoutingInfo(smPolicy, appID, routeReq, ...)`，其中`routeReq == nil`导致后续nil dereference。
+
+受影响代码：`NFs/pcf/internal/sbi/processor/policyauthorization.go`
+
+---
+
+### VULN-011: AMF DELETE /subscriptions/{id} 更新后panic
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/876
+- **严重程度**：中危
+- **影响组件**：AMF
+
+#### 漏洞分析
+
+> 数据来源：Issue #876
+
+AMF的订阅管理中存在类型一致性问题：
+1. `POST`创建时，`AMFStatusSubscriptions` map中存储的是**值类型**
+2. `PUT`更新时，同一map中被替换为**指针类型**
+3. `DELETE`删除时，`FindAMFStatusSubscription`对map值做值类型断言（type assertion），因实际存储的是指针类型而panic
+
+受影响代码：
+- 创建：`NFs/amf/internal/context/context.go`
+- 修改：`NFs/amf/internal/sbi/processor/subscription.go`
+- 删除：`NFs/amf/internal/context/context.go`
+
+---
+
+### VULN-012: UPF PFCP会话资源耗尽拒绝服务
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/819
+- **修复PR**：https://github.com/free5gc/go-upf/pull/98
+- **严重程度**：中危
+- **影响组件**：UPF
+
+#### 漏洞分析
+
+> 数据来源：Issue #819
+
+UPF的`LocalNode.NewSess()`（node.go:651-672）无限制地接受新会话创建请求。恶意PFCP对端可通过重复发送带有唯一SEID的SessionEstablishmentRequest来耗尽UPF内存，最终触发OOM killer。
+
+---
+
+### VULN-013: NRF nnrf-nfm接口越权操作
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/846, #847, #848
+- **修复PR**：https://github.com/free5gc/free5gc/pull/846, #847, #848
+- **严重程度**：中危
+- **影响组件**：NRF
+
+#### 漏洞分析
+
+> 数据来源：Issue #846, #847, #848
+
+NRF的`nnrf-nfm`接口允许：
+- 未认证的RegisterNFInstance（PUT /nf-instances/{nfInstanceId}）
+- 非owner NF可PATCH修改其他NF profile（UpdateNFInstance）
+- 非owner NF可DELETE注销其他NF实例（DeregisterNFInstance）
+
+---
+
+### VULN-014: 多个NF的SBI回调接口缺少认证
+
+- **Issue链接**：https://github.com/free5gc/free5gc/issues/886, #889, #860, #861
+- **严重程度**：中危
+- **影响组件**：NEF、UDM
+
+#### 漏洞分析
+
+> 数据来源：Issue #886, #889
+
+多个NF的回调接口（callback endpoint）未添加OAuth2认证中间件，攻击者可直接伪造回调请求。
 
 ---
 
 ## 攻击模式库
 
-### 攻击模式：Go切片/数组越界访问
-
-**模式ID**：GOVULN-BOF-001
-**漏洞类型**：CWE-125 (Out-of-bounds Read) / CWE-787 (Out-of-bounds Write)
-**严重程度**：高
-**适用场景**：协议消息解析、二进制数据处理、网络数据包解码
-
-#### 漏洞描述
-
-在Go语言中，直接通过索引访问切片或数组元素而不检查长度，当外部输入控制了数据长度时，攻击者可构造短于预期的数据触发runtime panic（`index out of range`），导致服务崩溃。这在协议解析代码中尤为常见，因为解析逻辑通常假设输入数据满足协议规范的最小长度要求。
-
-#### 漏洞模式（漏洞代码案例）
-
-```go
-// 模式特征：直接索引访问外部输入的字节切片，无长度校验
-func DecodeProtocolMessage(data []byte) (*Message, error) {
-    msg := &Message{}
-    msg.Type = data[0]           // 无长度检查
-    msg.Length = binary.BigEndian.Uint16(data[1:3])  // 假设至少3字节
-    msg.Payload = data[3:]       // 假设至少3字节
-
-    // 基于解码字段继续索引访问
-    if msg.Type == TypeSUCI {
-        msg.SchemeID = data[3]   // 假设至少4字节
-        msg.KeyID = data[4]      // 假设至少5字节
-        msg.Output = data[5:]    // 假设至少6字节
-    }
-    return msg, nil
-}
-```
-
-#### 检测规则
-
-- 函数接收 `[]byte` 参数后直接通过索引访问（如 `data[N]`），且之前无 `len(data)` 检查
-- 使用 `binary.BigEndian.UintXX(data[M:N])` 而无长度验证
-- 协议解析函数中基于解码的字段值再次索引原始数据
-- `switch` 分支中针对不同消息类型访问不同偏移量但共享相同的（不充分的）长度检查
-- 切片操作 `data[N:]` 中N可能大于 `len(data)`
-
-#### 安全模式（修复代码案例）
-
-```go
-func DecodeProtocolMessage(data []byte) (*Message, error) {
-    // 前置长度验证
-    if len(data) < 3 {
-        return nil, fmt.Errorf("message too short: got %d bytes, minimum 3", len(data))
-    }
-
-    msg := &Message{}
-    msg.Type = data[0]
-    msg.Length = binary.BigEndian.Uint16(data[1:3])
-    msg.Payload = data[3:]
-
-    if msg.Type == TypeSUCI {
-        // 针对特定消息类型的额外长度验证
-        if len(data) < 6 {
-            return nil, fmt.Errorf("SUCI message too short: got %d bytes, minimum 6", len(data))
-        }
-        msg.SchemeID = data[3]
-        msg.KeyID = data[4]
-        msg.Output = data[5:]
-    }
-    return msg, nil
-}
-```
-
-#### 测试方法
-
-```go
-func TestDecodeProtocolMessage_ShortInput(t *testing.T) {
-    testCases := []struct {
-        name string
-        data []byte
-    }{
-        {"empty", []byte{}},
-        {"one_byte", []byte{0x01}},
-        {"two_bytes", []byte{0x01, 0x00}},
-        {"suci_too_short", []byte{TypeSUCI, 0x00, 0x03, 0x01}},
-    }
-
-    for _, tc := range testCases {
-        t.Run(tc.name, func(t *testing.T) {
-            defer func() {
-                if r := recover(); r != nil {
-                    t.Errorf("panic on short input %q: %v", tc.name, r)
-                }
-            }()
-            _, err := DecodeProtocolMessage(tc.data)
-            if err == nil {
-                t.Errorf("expected error for short input %q", tc.name)
-            }
-        })
-    }
-}
-```
-
-#### 关联CVE
-
-- CVE-2025-69248 — free5gc AMF NAS Registration Request缓冲区溢出
-- CVE-2025-70121 — free5gc AMF 5GS Mobile Identity数组索引越界
-
----
-
-### 攻击模式：Go空指针解引用（nil pointer dereference）
+### 攻击模式：PFCP协议Mandatory IE空指针解引用
 
 **模式ID**：GOVULN-NIL-001
 **漏洞类型**：CWE-476 (NULL Pointer Dereference)
-**严重程度**：中-高
-**适用场景**：API请求处理、嵌套结构体访问、函数返回值处理
-
-#### 漏洞描述
-
-Go语言中对nil指针进行字段访问或方法调用会触发runtime panic。在网络服务中，当外部请求包含不完整的数据结构（嵌套对象为nil）或者函数在异常路径下返回nil，而调用方未进行nil检查时，攻击者可以通过构造缺失特定字段的请求触发服务崩溃。
-
-#### 漏洞模式（漏洞代码案例）
-
-```go
-// 模式1：嵌套结构体访问无nil检查
-func HandleRequest(req *RequestBody) Response {
-    // req本身可能为nil
-    // req.SubField可能为nil
-    value := req.SubField.NestedField  // panic if SubField is nil
-    return process(value)
-}
-
-// 模式2：函数返回值仅检查error忽略业务对象
-func ProcessSession(ctx *Context) error {
-    session, err := createSession(ctx)
-    if err != nil {
-        return err
-    }
-    // session可能为nil（函数返回nil, nil的情况）
-    ctx.ID = session.ID  // panic if session is nil
-    return nil
-}
-
-// 模式3：map查找结果未检查
-func GetHandler(name string) {
-    handlers := getHandlerMap()
-    handler := handlers[name]  // 返回nil如果key不存在
-    handler.Execute()          // panic if handler is nil
-}
-```
-
-#### 检测规则
-
-- 函数参数为指针类型但函数体内无nil检查即直接使用
-- 链式字段访问 `a.B.C.D` 中间层级可能为nil
-- 函数返回 `(*Type, error)` 后调用方仅检查 `err != nil` 但未检查返回的指针
-- map索引结果直接用于方法调用或字段访问
-- 接口类型断言结果未使用 `ok` 模式检查（`val := x.(Type)` 而非 `val, ok := x.(Type)`）
-- HTTP handler中 `json.Decode` 后未检查解码结果中的可选字段
-
-#### 安全模式（修复代码案例）
-
-```go
-// 安全模式：逐层nil检查
-func HandleRequest(req *RequestBody) Response {
-    if req == nil {
-        return ErrorResponse("request body is nil")
-    }
-    if req.SubField == nil {
-        return ErrorResponse("missing required field: SubField")
-    }
-    value := req.SubField.NestedField
-    return process(value)
-}
-
-// 安全模式：双重返回值检查
-func ProcessSession(ctx *Context) error {
-    session, err := createSession(ctx)
-    if err != nil {
-        return fmt.Errorf("create session failed: %w", err)
-    }
-    if session == nil {
-        return fmt.Errorf("create session returned nil")
-    }
-    ctx.ID = session.ID
-    return nil
-}
-
-// 安全模式：map查找使用comma-ok
-func GetHandler(name string) error {
-    handlers := getHandlerMap()
-    handler, ok := handlers[name]
-    if !ok || handler == nil {
-        return fmt.Errorf("handler not found: %s", name)
-    }
-    handler.Execute()
-    return nil
-}
-```
-
-#### 测试方法
-
-```go
-func TestHandleRequest_NilFields(t *testing.T) {
-    testCases := []struct {
-        name string
-        req  *RequestBody
-    }{
-        {"nil_request", nil},
-        {"nil_subfield", &RequestBody{SubField: nil}},
-        {"nil_nested", &RequestBody{SubField: &SubField{NestedField: nil}}},
-    }
-
-    for _, tc := range testCases {
-        t.Run(tc.name, func(t *testing.T) {
-            defer func() {
-                if r := recover(); r != nil {
-                    t.Errorf("panic on %s: %v", tc.name, r)
-                }
-            }()
-            resp := HandleRequest(tc.req)
-            if resp.IsError() {
-                // 期望返回错误，而非panic
-            }
-        })
-    }
-}
-```
-
-#### 关联CVE
-
-- CVE-2026-1973 — free5gc SMF establishPfcpSession空指针解引用
-- CVE-2026-1739 — free5gc PCF HandleCreateSmPolicyRequest空指针解引用
-
----
-
-### 攻击模式：协议消息必选字段验证缺失
-
-**模式ID**：GOVULN-PRO-001
-**漏洞类型**：CWE-20 (Improper Input Validation)
 **严重程度**：高
-**适用场景**：3GPP协议实现（NAS/PFCP/NGAP/GTP）、自定义二进制协议处理
+**适用场景**：PFCP/GTP/Diameter等电信协议消息处理函数
 
 #### 漏洞描述
 
-在实现通信协议时，协议规范中定义了消息的必选信息元素（Mandatory IE）和可选信息元素（Optional IE）。当代码未验证必选IE的存在性和格式正确性时，接收到不合规的消息可能导致空指针解引用、数组越界或状态不一致。
+在Go实现的电信协议处理函数中，协议消息（如PFCP SessionReportRequest、SessionEstablishmentResponse等）的Mandatory IE字段以指针类型表示。当恶意对端发送缺失Mandatory IE的消息时，Go代码直接访问该指针字段而未检查nil，触发panic导致进程崩溃。
+
+由于PFCP handler通常在独立goroutine中运行且无defer recover保护，panic会直接终止整个NF进程。
 
 #### 漏洞模式（漏洞代码案例）
 
 ```go
-// 模式特征：协议消息处理函数直接解包使用字段，无合规性检查
-func HandlePFCPRequest(msg *pfcp.Message) *pfcp.Message {
-    req := msg.Body.(pfcp.SessionEstablishmentRequest)
-    // 3GPP规范要求NodeID为必选IE，但代码未验证
-    nodeID := req.NodeID.Value()       // NodeID可能为nil
-    fseid := req.CPFSEID.Value()       // CPFSEID可能为nil
-    // 直接使用未经验证的字段创建会话
-    session := &Session{
-        NodeID:   nodeID,
-        FSEID:    fseid,
-        PDRs:     extractPDRs(req),    // 内部也可能因缺失IE而panic
+// 来源：free5gc SMF handler.go / datapath.go 的多个PFCP处理函数
+// 模式特征：协议消息字段（指针类型IE）在使用前无nil检查
+
+func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
+    req := msg.Body.(pfcp.SessionReportRequest)
+
+    // 模式1: 直接访问可能缺失的Mandatory IE
+    if req.ReportType.Dldr {  // ReportType为nil时panic
+        // ...
     }
-    return buildResponse(session)
+
+    // 模式2: 条件检查后访问依赖IE，但未检查依赖IE本身
+    if req.ReportType.Usar {
+        report := req.UsageReport
+        trigger := report.UsageReportTrigger  // trigger可能为nil
+        if trigger.Volth {  // panic
+            // ...
+        }
+        vol := report.VolumeMeasurement  // 可能为nil
+        total := vol.TotalVolume          // panic
+    }
+}
+
+func handleEstablishmentResponse(rsp *pfcp.SessionEstablishmentResponse) {
+    // 模式3: Response中Mandatory IE缺失
+    if rsp.Cause.CauseValue != pfcp.CauseRequestAccepted {  // Cause为nil时panic
+        // error handling
+    }
+    nodeID := rsp.NodeID.ResolveNodeIdToIp()  // NodeID为nil时panic
 }
 ```
 
 #### 检测规则
 
-- 协议消息处理函数（Handle*, Process*, On*）中直接对消息字段调用 `.Value()` 或直接访问而无nil/存在性检查
-- 类型断言 `msg.Body.(SpecificType)` 后未使用comma-ok模式
-- 协议状态机跳转中未验证前置条件
-- 缺少与协议规范文档（如3GPP TS 29.244）对应的IE存在性校验代码
-- 响应消息构造中对请求中的必选字段无验证逻辑
+- PFCP/NAS/NGAP消息处理函数中，对消息体字段直接做`.Field`访问而无前置nil检查
+- 协议消息结构体中的指针类型字段（表示可选/必选IE）被直接解引用
+- handler函数运行在goroutine中且无`defer func() { recover() }()`
+- 条件分支（如`if req.ReportType.Dldr`）直接在nil指针上访问字段
+- Response处理函数中对Cause、NodeID等Mandatory IE的直接使用
 
 #### 安全模式（修复代码案例）
 
 ```go
-func HandlePFCPRequest(msg *pfcp.Message) *pfcp.Message {
-    req, ok := msg.Body.(pfcp.SessionEstablishmentRequest)
-    if !ok {
-        return buildErrorResponse(pfcp.CauseInvalidRequest)
+func HandlePfcpSessionReportRequest(msg *pfcp.Message) {
+    req := msg.Body.(pfcp.SessionReportRequest)
+
+    // 安全模式1: 逐层nil检查Mandatory IE
+    if req.ReportType == nil {
+        sendErrorResponse(msg, pfcp.CauseMandatoryIEMissing)
+        return
     }
 
-    // 3GPP TS 29.244 Section 7.5.2：验证所有必选IE
-    if req.NodeID == nil {
-        return buildErrorResponse(pfcp.CauseMandatoryIEMissing)
-    }
-    if req.CPFSEID == nil {
-        return buildErrorResponse(pfcp.CauseMandatoryIEMissing)
-    }
-
-    // 验证IE值的有效性
-    nodeID := req.NodeID.Value()
-    if err := validateNodeID(nodeID); err != nil {
-        return buildErrorResponse(pfcp.CauseInvalidNodeID)
+    if req.ReportType.Dldr {
+        if req.DownlinkDataReport == nil {
+            sendErrorResponse(msg, pfcp.CauseMandatoryIEMissing)
+            return
+        }
+        // safe to use req.DownlinkDataReport
     }
 
-    fseid := req.CPFSEID.Value()
-    session := &Session{
-        NodeID: nodeID,
-        FSEID:  fseid,
-        PDRs:   extractPDRs(req),
+    if req.ReportType.Usar {
+        if req.UsageReport == nil || req.UsageReport.UsageReportTrigger == nil {
+            sendErrorResponse(msg, pfcp.CauseMandatoryIEMissing)
+            return
+        }
+        if req.UsageReport.VolumeMeasurement == nil {
+            // 按业务需求处理缺失情况
+            return
+        }
+        total := req.UsageReport.VolumeMeasurement.TotalVolume
+        // ...
     }
-    return buildResponse(session)
+}
+
+// 安全模式2: goroutine级别panic recovery
+func dispatchPFCPHandler(handler func(*pfcp.Message), msg *pfcp.Message) {
+    go func() {
+        defer func() {
+            if r := recover(); r != nil {
+                log.Errorf("PFCP handler panic recovered: %v", r)
+            }
+        }()
+        handler(msg)
+    }()
 }
 ```
 
 #### 测试方法
 
 ```go
-func TestHandlePFCPRequest_MissingMandatoryIE(t *testing.T) {
-    testCases := []struct {
-        name    string
-        request pfcp.SessionEstablishmentRequest
+func TestHandlePfcpSessionReportRequest_MissingIE(t *testing.T) {
+    tests := []struct {
+        name string
+        msg  pfcp.SessionReportRequest
     }{
-        {"missing_node_id", pfcp.SessionEstablishmentRequest{CPFSEID: validFSEID}},
-        {"missing_fseid", pfcp.SessionEstablishmentRequest{NodeID: validNodeID}},
-        {"all_missing", pfcp.SessionEstablishmentRequest{}},
-        {"invalid_node_id", pfcp.SessionEstablishmentRequest{
-            NodeID: &pfcp.NodeID{Value: []byte{0xFF}},  // 非法格式
-            CPFSEID: validFSEID,
+        {"missing_report_type", pfcp.SessionReportRequest{}},
+        {"dldr_without_report", pfcp.SessionReportRequest{
+            ReportType: &pfcp.ReportType{Dldr: true},
+            // DownlinkDataReport is nil
+        }},
+        {"usar_without_trigger", pfcp.SessionReportRequest{
+            ReportType: &pfcp.ReportType{Usar: true},
+            UsageReport: &pfcp.UsageReport{
+                // UsageReportTrigger is nil
+            },
+        }},
+        {"usar_without_volume", pfcp.SessionReportRequest{
+            ReportType: &pfcp.ReportType{Usar: true},
+            UsageReport: &pfcp.UsageReport{
+                UsageReportTrigger: &pfcp.UsageReportTrigger{Volth: true},
+                // VolumeMeasurement is nil
+            },
         }},
     }
 
-    for _, tc := range testCases {
+    for _, tc := range tests {
         t.Run(tc.name, func(t *testing.T) {
             defer func() {
                 if r := recover(); r != nil {
-                    t.Fatalf("panic: %v", r)
+                    t.Fatalf("handler panicked on %s: %v", tc.name, r)
                 }
             }()
-            resp := HandlePFCPRequest(buildMessage(tc.request))
-            if resp.Cause != pfcp.CauseMandatoryIEMissing && resp.Cause != pfcp.CauseInvalidNodeID {
-                t.Error("expected error cause in response")
-            }
+            HandlePfcpSessionReportRequest(buildMsg(tc.msg))
         })
     }
 }
 ```
 
-#### 关联CVE
+#### 关联CVE/Issue
 
-- CVE-2025-70123 — free5gc UPF PFCP协议合规性漏洞
-- CVE-2025-69232 — free5gc go-upf PFCP Association Setup请求验证缺失
-- CVE-2026-26025 — free5gc SMF PFCP SessionReportRequest处理崩溃
+- Issue #804 — SMF crashes on missing ReportType IE
+- Issue #805 — SMF crashes on missing DownlinkDataReport IE
+- Issue #806 — SMF crashes on missing VolumeMeasurement
+- Issue #814 — SMF crashes on missing UsageReportTrigger
+- Issue #815 — SMF crashes on missing Cause IE in EstablishmentResponse
+- Issue #816 — SMF crashes on missing NodeID IE in EstablishmentResponse
+- Issue #817 — SMF crashes on missing Cause IE in DeletionResponse
 
 ---
 
-### 攻击模式：协议状态不一致导致服务降级
+### 攻击模式：NAS协议字节切片越界访问
 
-**模式ID**：GOVULN-PRO-002
-**漏洞类型**：CWE-372 (Incomplete Internal State Distinction)
-**严重程度**：中
-**适用场景**：有状态协议处理、会话管理、连接池管理
+**模式ID**：GOVULN-BOF-001
+**漏洞类型**：CWE-125 (Out-of-bounds Read)
+**严重程度**：高
+**适用场景**：NAS/NGAP协议消息解析、二进制编解码
 
 #### 漏洞描述
 
-在有状态协议处理中，接受不合规的消息可能导致内部状态与预期不一致。例如在PFCP关联管理中，错误地接受了格式异常的关联建立请求，可能导致对端（如SMF）陷入重连循环，形成持续性服务降级。
+NAS协议消息解析函数以`[]byte`形式接收网络数据，通过固定偏移量索引解码各字段。当恶意构造的消息长度短于解码逻辑预期时，索引访问超出切片边界触发Go运行时panic。
 
 #### 漏洞模式（漏洞代码案例）
 
 ```go
-// 模式特征：无条件接受请求并更新内部状态
-func HandleAssociationSetup(req *AssociationSetupRequest) {
-    // 未验证请求合法性就更新关联状态
-    assoc := &Association{
-        NodeID:    req.NodeID,
-        State:     StateEstablished,
-        Timestamp: time.Now(),
-    }
-    associationStore.Put(assoc)
-    // 发送成功响应 — 对端认为关联已建立
-    sendResponse(CauseAccepted)
-    // 但关联状态可能不一致（缺少必要信息）
-    // 后续请求基于此关联执行时可能失败
+// 来源：free5gc/nas nasType/NAS_MobileIdentity5GS.go
+// 模式特征：直接索引[]byte而无len()前置检查
+
+func (a *MobileIdentity5GS) GetSUCI() string {
+    // a.Buffer来自网络数据，长度不可信
+    supiFormat := a.Buffer[0] & 0x70 >> 4  // 需要至少1字节
+    plmnID := decodePLMN(a.Buffer[1:4])    // 需要至少4字节
+    routingIndicator := a.Buffer[4:6]       // 需要至少6字节
+    schemeID := a.Buffer[6]                 // 需要至少7字节
+    // 当Buffer长度为7但代码期望更多时：
+    keyID := a.Buffer[7]                    // panic: index out of range [7] with length 7
+    output := a.Buffer[8:]
+    // ...
 }
 ```
 
 #### 检测规则
 
-- 协议关联/会话建立处理中无验证即返回成功
-- 状态机更新操作在验证逻辑之前执行
-- 错误处理路径中未回滚已更新的状态
-- 连接/关联存储的增删操作缺少事务性保证
-- 成功响应在所有验证完成之前发送
+- 解析函数对`[]byte`参数或结构体的`[]byte`字段通过固定索引访问，函数入口无`len()`检查
+- 不同协议消息类型的`switch`分支访问不同偏移量但共用不足的长度检查
+- `data[M:N]`切片操作中M或N可能超出实际长度
+- Buffer字段来自网络输入（NGAP解码、PFCP解码等）
 
 #### 安全模式（修复代码案例）
 
 ```go
-func HandleAssociationSetup(req *AssociationSetupRequest) {
-    // 先验证，再更新状态
-    if err := validateAssociationRequest(req); err != nil {
-        sendResponse(CauseRequestRejected)
-        return
+// 来源：free5gc/nas PR #43
+func (a *MobileIdentity5GS) GetSUCI() (string, error) {
+    if len(a.Buffer) == 0 {
+        return "", fmt.Errorf("empty buffer")
     }
 
-    assoc := &Association{
-        NodeID:    req.NodeID,
-        State:     StateEstablished,
-        Timestamp: time.Now(),
+    const minSUCILen = 9  // 根据协议规范定义最小长度
+    if len(a.Buffer) < minSUCILen {
+        return "", fmt.Errorf("SUCI buffer too short: %d < %d", len(a.Buffer), minSUCILen)
     }
 
-    // 验证通过后才更新存储
-    if err := associationStore.Put(assoc); err != nil {
-        sendResponse(CauseSystemFailure)
-        return
-    }
-
-    sendResponse(CauseAccepted)
+    supiFormat := a.Buffer[0] & 0x70 >> 4
+    plmnID := decodePLMN(a.Buffer[1:4])
+    routingIndicator := a.Buffer[4:6]
+    schemeID := a.Buffer[6]
+    keyID := a.Buffer[7]
+    output := a.Buffer[8:]
+    // ...
 }
 ```
 
 #### 测试方法
 
 ```go
-func TestHandleAssociationSetup_InvalidRequest(t *testing.T) {
-    store := NewAssociationStore()
-    initialCount := store.Count()
-
-    // 发送格式错误的请求
-    invalidReq := &AssociationSetupRequest{
-        NodeID: nil,  // 必选字段缺失
+func TestGetSUCI_MalformedInput(t *testing.T) {
+    tests := []struct {
+        name   string
+        buffer []byte
+    }{
+        {"empty", []byte{}},
+        {"one_byte", []byte{0x01}},
+        {"short_plmn", []byte{0x01, 0x02, 0x03}},
+        {"short_scheme", []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
+        {"short_key", []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}},
+        {"min_valid", []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09}},
     }
-    HandleAssociationSetup(invalidReq)
 
-    // 验证：存储中不应新增关联
-    if store.Count() != initialCount {
-        t.Error("invalid request should not create association")
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            mi := &MobileIdentity5GS{Buffer: tc.buffer}
+            defer func() {
+                if r := recover(); r != nil {
+                    t.Fatalf("panic on %s (len=%d): %v", tc.name, len(tc.buffer), r)
+                }
+            }()
+            _, err := mi.GetSUCI()
+            if len(tc.buffer) < 9 && err == nil {
+                t.Error("expected error for short buffer")
+            }
+        })
     }
 }
 ```
 
-#### 关联CVE
+#### 关联CVE/Issue
 
-- CVE-2025-70123 — free5gc UPF接受格式错误的PFCP关联请求
-- CVE-2025-69232 — free5gc go-upf PFCP关联建立导致SMF重连循环
+- CVE-2025-69248 — AMF NAS Registration Request缓冲区溢出
+- Issue #835 — Malformed NAS-PDU crashes AMF
+- Issue #856 — Index out of bound vulnerability in AMF（修复不完整）
+
+---
+
+### 攻击模式：SBI接口OAuth2授权粒度不足
+
+**模式ID**：GOVULN-AUZ-001
+**漏洞类型**：CWE-285 (Improper Authorization)
+**严重程度**：中
+**适用场景**：5GC NF间SBI（Service Based Interface）HTTP API
+
+#### 漏洞描述
+
+5GC核心网NF之间通过SBI接口（HTTP/2 + OAuth2）通信。当授权检查仅验证token的service scope（如`nnrf-nfm`）而不验证操作主体是否有权操作目标资源时，持有有效service token的任意NF可越权操作其他NF的资源。
+
+#### 漏洞模式（漏洞代码案例）
+
+```go
+// 模式特征：auth中间件仅检查service scope，不检查资源所有权
+func authMiddleware(serviceName string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := extractBearerToken(c)
+        claims, err := validateToken(token)
+        if err != nil {
+            c.AbortWithStatus(401)
+            return
+        }
+        // 仅检查service scope
+        if !claims.HasScope(serviceName) {
+            c.AbortWithStatus(403)
+            return
+        }
+        // 未检查：请求者是否有权操作目标nfInstanceId
+        c.Next()
+    }
+}
+
+// 任何持有nnrf-nfm token的NF都可以删除其他NF的注册
+func DeregisterNFInstance(c *gin.Context) {
+    nfInstanceId := c.Param("nfInstanceId")
+    // 缺失：检查请求者的nfInstanceId是否等于目标nfInstanceId
+    deleteNFProfile(nfInstanceId)
+    c.Status(204)
+}
+```
+
+#### 检测规则
+
+- SBI API handler中仅使用service-level OAuth2 scope检查
+- RESTful路径参数（如`{nfInstanceId}`、`{supi}`）未与请求者身份比对
+- 回调接口（callback endpoint）完全缺失OAuth2认证中间件
+- PUT/PATCH/DELETE操作未验证资源所有权
+
+#### 安全模式（修复代码案例）
+
+```go
+func authMiddleware(serviceName string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := extractBearerToken(c)
+        claims, err := validateToken(token)
+        if err != nil {
+            c.AbortWithStatus(401)
+            return
+        }
+        if !claims.HasScope(serviceName) {
+            c.AbortWithStatus(403)
+            return
+        }
+        c.Set("callerNfInstanceId", claims.NfInstanceId)
+        c.Next()
+    }
+}
+
+func DeregisterNFInstance(c *gin.Context) {
+    nfInstanceId := c.Param("nfInstanceId")
+    callerNfId := c.GetString("callerNfInstanceId")
+
+    // 资源所有权检查
+    if nfInstanceId != callerNfId {
+        c.JSON(403, ProblemDetails{
+            Title:  "Forbidden",
+            Detail: "cannot deregister other NF instance",
+        })
+        return
+    }
+    deleteNFProfile(nfInstanceId)
+    c.Status(204)
+}
+```
+
+#### 测试方法
+
+```go
+func TestDeregisterNFInstance_OwnershipCheck(t *testing.T) {
+    // 创建NF-A和NF-B的token
+    tokenA := generateToken("nf-instance-a", "nnrf-nfm")
+    tokenB := generateToken("nf-instance-b", "nnrf-nfm")
+
+    // NF-A尝试删除NF-B的注册 → 应拒绝
+    req := httptest.NewRequest("DELETE", "/nf-instances/nf-instance-b", nil)
+    req.Header.Set("Authorization", "Bearer "+tokenA)
+    resp := httptest.NewRecorder()
+    router.ServeHTTP(resp, req)
+
+    if resp.Code != 403 {
+        t.Errorf("expected 403, got %d: NF-A should not deregister NF-B", resp.Code)
+    }
+
+    // NF-B删除自己 → 应成功
+    req2 := httptest.NewRequest("DELETE", "/nf-instances/nf-instance-b", nil)
+    req2.Header.Set("Authorization", "Bearer "+tokenB)
+    resp2 := httptest.NewRecorder()
+    router.ServeHTTP(resp2, req2)
+
+    if resp2.Code != 204 {
+        t.Errorf("expected 204, got %d: NF-B should deregister itself", resp2.Code)
+    }
+}
+```
+
+#### 关联Issue
+
+- Issue #846 — NRF allows unauthenticated RegisterNFInstance
+- Issue #847 — NRF over-authorizes UpdateNFInstance
+- Issue #848 — NRF over-authorizes DeregisterNFInstance
+- Issue #878 — AMF over-authorizes UE-context operations
+- Issue #882 — UDM over-authorizes auth-data surfaces
+- Issue #886 — NEF callback is unauthenticated
+
+---
+
+### 攻击模式：Go类型断言不一致导致panic
+
+**模式ID**：GOVULN-NIL-002
+**漏洞类型**：CWE-843 (Access of Resource Using Incompatible Type)
+**严重程度**：中
+**适用场景**：使用`interface{}`/`any`类型存储的map、sync.Map、上下文传递
+
+#### 漏洞描述
+
+Go中使用`map[string]interface{}`或`sync.Map`存储不同生命周期阶段写入的值时，如果写入时使用了不同的具体类型（值类型 vs 指针类型），后续读取并做类型断言时会因类型不匹配而panic。
+
+#### 漏洞模式（漏洞代码案例）
+
+```go
+// 来源：free5gc AMF subscription管理
+// 模式特征：同一map中create和update使用不同类型
+
+// Create时存储值类型
+func CreateSubscription(id string, sub SubscriptionData) {
+    amfContext.Subscriptions.Store(id, sub)  // 存储值类型
+}
+
+// Update时存储指针类型
+func UpdateSubscription(id string, sub *SubscriptionData) {
+    amfContext.Subscriptions.Store(id, sub)  // 存储指针类型！
+}
+
+// Delete时做值类型断言
+func FindSubscription(id string) (SubscriptionData, bool) {
+    val, ok := amfContext.Subscriptions.Load(id)
+    if !ok {
+        return SubscriptionData{}, false
+    }
+    // Update后val是*SubscriptionData，断言为SubscriptionData会panic
+    return val.(SubscriptionData), true  // panic!
+}
+```
+
+#### 检测规则
+
+- `sync.Map`或`map[string]interface{}`的Store/Put使用了不同具体类型
+- 类型断言`val.(Type)`未使用comma-ok模式（`val, ok := val.(Type)`）
+- 同一数据结构的CRUD操作分布在不同文件/函数中，存在类型不一致风险
+- Create和Update路径使用了值类型和指针类型的混用
+
+#### 安全模式（修复代码案例）
+
+```go
+// 安全模式1: 统一存储类型
+func CreateSubscription(id string, sub SubscriptionData) {
+    amfContext.Subscriptions.Store(id, &sub)  // 统一使用指针类型
+}
+
+func UpdateSubscription(id string, sub *SubscriptionData) {
+    amfContext.Subscriptions.Store(id, sub)   // 统一使用指针类型
+}
+
+func FindSubscription(id string) (*SubscriptionData, bool) {
+    val, ok := amfContext.Subscriptions.Load(id)
+    if !ok {
+        return nil, false
+    }
+    // 安全模式2: comma-ok类型断言
+    sub, ok := val.(*SubscriptionData)
+    if !ok {
+        log.Warnf("unexpected type in subscription store: %T", val)
+        return nil, false
+    }
+    return sub, true
+}
+```
+
+#### 测试方法
+
+```go
+func TestSubscriptionTypeConsistency(t *testing.T) {
+    store := NewSubscriptionStore()
+
+    // Create
+    store.CreateSubscription("sub-1", SubscriptionData{ID: "sub-1"})
+
+    // Update（可能改变存储类型）
+    updated := &SubscriptionData{ID: "sub-1", Updated: true}
+    store.UpdateSubscription("sub-1", updated)
+
+    // Find应不panic
+    defer func() {
+        if r := recover(); r != nil {
+            t.Fatalf("FindSubscription panicked after Update: %v", r)
+        }
+    }()
+    sub, ok := store.FindSubscription("sub-1")
+    if !ok || sub == nil {
+        t.Error("subscription not found after update")
+    }
+}
+```
+
+#### 关联Issue
+
+- Issue #876 — AMF DELETE /subscriptions panic after PUT
+
+---
+
+### 攻击模式：协议会话资源无上限控制
+
+**模式ID**：GOVULN-DOS-001
+**漏洞类型**：CWE-770 (Allocation of Resources Without Limits or Throttling)
+**严重程度**：中
+**适用场景**：PFCP/GTP会话管理、连接池、订阅管理
+
+#### 漏洞描述
+
+协议实现中的会话/资源创建函数未设置数量上限。恶意对端可通过反复创建新会话（不释放）来耗尽目标NF的内存，最终触发OOM killer导致进程终止。
+
+#### 漏洞模式（漏洞代码案例）
+
+```go
+// 来源：free5gc go-upf node.go:651-672
+// 模式特征：资源创建无上限、无准入控制
+
+func (n *LocalNode) NewSess(seid uint64) *Session {
+    sess := &Session{
+        SEID:   seid,
+        PDRs:   make(map[uint16]*PDR),
+        FARs:   make(map[uint32]*FAR),
+        URRs:   make(map[uint32]*URR),
+    }
+    n.sess = append(n.sess, sess)  // 无限追加，无上限检查
+    return sess
+}
+```
+
+#### 检测规则
+
+- `append`到切片或`map`新增条目的操作无数量限制检查
+- 资源创建路径可由外部输入触发（如PFCP消息）
+- 缺少对应的资源回收/老化机制
+- 无速率限制（rate limiting）或准入控制（admission control）
+
+#### 安全模式（修复代码案例）
+
+```go
+const MaxSessions = 10000
+
+func (n *LocalNode) NewSess(seid uint64) (*Session, error) {
+    n.mu.Lock()
+    defer n.mu.Unlock()
+
+    if len(n.sess) >= MaxSessions {
+        return nil, fmt.Errorf("session limit reached: %d", MaxSessions)
+    }
+
+    sess := &Session{
+        SEID:   seid,
+        PDRs:   make(map[uint16]*PDR),
+        FARs:   make(map[uint32]*FAR),
+        URRs:   make(map[uint32]*URR),
+    }
+    n.sess = append(n.sess, sess)
+    return sess, nil
+}
+```
+
+#### 关联Issue
+
+- Issue #819 — UPF session pool exhaustion (memory exhaustion DoS)
+- Issue #818 — UPF unbounded URR map growth
 
 ---
 
 ## 代码审计检查清单
 
-基于以上攻击模式，在审计Go语言项目（尤其是5GC核心网）时，应重点检查：
+基于以上攻击模式，在审计Go语言5GC项目时应重点检查：
 
-### 输入验证
+### PFCP消息处理（最高优先级）
 
-- [ ] 所有接收 `[]byte` 参数的解析函数是否在索引访问前检查 `len()`
-- [ ] 二进制协议解码是否验证了最小消息长度
-- [ ] 不同消息类型的解析分支是否有各自的长度验证
-- [ ] 切片操作 `data[N:M]` 中N和M是否可能越界
+- [ ] 每个PFCP handler是否对所有Mandatory IE做了nil检查
+- [ ] 条件分支中的依赖IE是否在使用前验证（如ReportType.DLDR=true时检查DownlinkDataReport）
+- [ ] PFCP handler goroutine是否有defer recover保护
+- [ ] Response处理中Cause、NodeID等字段是否检查nil
+- [ ] 嵌套IE（如UsageReport中的子IE）是否逐层检查
 
-### 空指针防护
+### NAS消息解析（高优先级）
 
-- [ ] 外部请求处理函数是否检查请求体及其嵌套字段的nil
-- [ ] 函数返回 `(*T, error)` 后调用方是否同时检查error和返回值
-- [ ] map查找结果是否在使用前检查存在性
+- [ ] `[]byte`类型Buffer在索引访问前是否检查`len()`
+- [ ] 不同Identity类型（SUCI/GUTI/IMEI等）的解码路径是否各自有长度校验
+- [ ] 奇数/偶数长度MSIN等边界条件是否处理
+
+### SBI接口授权（高优先级）
+
+- [ ] 每个SBI API endpoint是否配置了OAuth2中间件
+- [ ] 授权检查是否包含资源所有权验证（不仅仅是service scope）
+- [ ] 回调接口（callback）是否也有认证保护
+- [ ] PUT/PATCH/DELETE操作是否验证操作者身份
+
+### 类型安全
+
+- [ ] `sync.Map`或`map[string]interface{}`的CRUD操作是否使用一致的具体类型
 - [ ] 类型断言是否使用comma-ok模式
+- [ ] 不同代码路径对同一存储的写入是否类型兼容
 
-### 协议合规性
+### 资源管理
 
-- [ ] 协议消息处理是否验证了所有Mandatory IE的存在性
-- [ ] IE的值是否经过格式和范围校验
-- [ ] 状态机更新是否在验证通过之后执行
-- [ ] 错误路径是否正确回滚了状态变更
-- [ ] 响应是否在所有验证完成后才发送
-
-### 并发安全
-
-- [ ] 共享状态（如关联表、会话表）的读写是否有锁保护
-- [ ] 定时器回调和消息处理之间是否存在竞态
-- [ ] goroutine之间的channel通信是否可能死锁
+- [ ] 会话/连接/订阅创建是否有数量上限
+- [ ] 是否存在资源老化/超时清理机制
+- [ ] 是否有速率限制防止资源耗尽攻击
 
 ---
 
 ## 参考资料
 
-- [CVE-2025-69248](https://nvd.nist.gov/vuln/detail/CVE-2025-69248) — AMF NAS缓冲区溢出
-- [CVE-2025-70121](https://nvd.nist.gov/vuln/detail/CVE-2025-70121) — AMF数组索引越界
-- [CVE-2025-70123](https://nvd.nist.gov/vuln/detail/CVE-2025-70123) — UPF PFCP输入验证
-- [CVE-2025-69232](https://nvd.nist.gov/vuln/detail/CVE-2025-69232) — go-upf PFCP协议合规
+### CVE
+
+- [CVE-2025-69248](https://nvd.nist.gov/vuln/detail/CVE-2025-69248) — AMF NAS Registration Request缓冲区溢出
+- [CVE-2025-70121](https://nvd.nist.gov/vuln/detail/CVE-2025-70121) — AMF 5GS Mobile Identity数组索引越界
+- [CVE-2025-70123](https://nvd.nist.gov/vuln/detail/CVE-2025-70123) — UPF PFCP输入验证不足
+- [CVE-2025-69232](https://nvd.nist.gov/vuln/detail/CVE-2025-69232) — go-upf PFCP Association Setup验证缺失
 - [CVE-2026-1973](https://nvd.nist.gov/vuln/detail/CVE-2026-1973) — SMF空指针解引用
 - [CVE-2026-1739](https://nvd.nist.gov/vuln/detail/CVE-2026-1739) — PCF空指针解引用
-- [CVE-2026-26025](https://nvd.nist.gov/vuln/detail/CVE-2026-26025) — SMF PFCP会话报告崩溃
-- [free5gc Issue #745](https://github.com/free5gc/free5gc/issues/745) — PFCP协议合规性漏洞
-- [free5gc Issue #744](https://github.com/free5gc/free5gc/issues/744) — S-NSSAI验证缺陷
-- [free5gc/nas PR #43](https://github.com/free5gc/nas/pull/43) — NAS缓冲区溢出修复
+- [CVE-2026-26025](https://nvd.nist.gov/vuln/detail/CVE-2026-26025) — SMF PFCP SessionReportRequest处理崩溃
+
+### GitHub Issues
+
+- [#804](https://github.com/free5gc/free5gc/issues/804) — SMF crashes on missing ReportType IE
+- [#805](https://github.com/free5gc/free5gc/issues/805) — SMF crashes on missing DownlinkDataReport IE
+- [#806](https://github.com/free5gc/free5gc/issues/806) — SMF crashes on missing VolumeMeasurement
+- [#807](https://github.com/free5gc/free5gc/issues/807) — SMF crashes on missing UsageReportTrigger (variant)
+- [#814](https://github.com/free5gc/free5gc/issues/814) — SMF crashes on missing UsageReportTrigger
+- [#815](https://github.com/free5gc/free5gc/issues/815) — SMF crashes on missing Cause IE
+- [#816](https://github.com/free5gc/free5gc/issues/816) — SMF crashes on missing NodeID IE
+- [#817](https://github.com/free5gc/free5gc/issues/817) — SMF crashes on missing Cause IE in DeletionResponse
+- [#819](https://github.com/free5gc/free5gc/issues/819) — UPF session pool exhaustion
+- [#826](https://github.com/free5gc/free5gc/issues/826) — AMF nil pointer on AuthenticationFailure
+- [#835](https://github.com/free5gc/free5gc/issues/835) — Malformed NAS-PDU crashes AMF
+- [#846](https://github.com/free5gc/free5gc/issues/846) — NRF unauthenticated RegisterNFInstance
+- [#856](https://github.com/free5gc/free5gc/issues/856) — AMF index out of bound (unfixed)
+- [#876](https://github.com/free5gc/free5gc/issues/876) — AMF subscription delete panic
+- [#879](https://github.com/free5gc/free5gc/issues/879) — PCF app-sessions panic
+
+### 修复PR
+
+- [free5gc/nas PR #43](https://github.com/free5gc/nas/pull/43) — fix: prevent panic in MobileIdentity5GS getters
+- [free5gc/go-upf PR #98](https://github.com/free5gc/go-upf/pull/98) — UPF session/URR fixes
+
+### 协议规范
+
 - [3GPP TS 29.244](https://www.3gpp.org/DynaReport/29244.htm) — PFCP协议规范
-- [3GPP TS 24.501](https://www.3gpp.org/DynaReport/24501.htm) — NAS协议规范
+- [3GPP TS 24.501](https://www.3gpp.org/DynaReport/24501.htm) — 5GS NAS协议规范
+- [3GPP TS 38.413](https://www.3gpp.org/DynaReport/38413.htm) — NGAP协议规范
+- [3GPP TS 29.510](https://www.3gpp.org/DynaReport/29510.htm) — NRF Services规范
+
+### CWE
+
 - [CWE-125](https://cwe.mitre.org/data/definitions/125.html) — Out-of-bounds Read
 - [CWE-476](https://cwe.mitre.org/data/definitions/476.html) — NULL Pointer Dereference
-- [CWE-20](https://cwe.mitre.org/data/definitions/20.html) — Improper Input Validation
+- [CWE-285](https://cwe.mitre.org/data/definitions/285.html) — Improper Authorization
+- [CWE-770](https://cwe.mitre.org/data/definitions/770.html) — Allocation Without Limits
+- [CWE-843](https://cwe.mitre.org/data/definitions/843.html) — Type Confusion
