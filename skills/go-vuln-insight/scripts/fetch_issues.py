@@ -50,7 +50,7 @@ def api_request(url: str, token: Optional[str] = None) -> dict | list:
     """发送GitHub API请求。"""
     headers = {
         "Accept": "application/vnd.github+json",
-        "User-Agent": "go-vuln-lib/1.0"
+        "User-Agent": "go-vuln-insight/1.0"
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"

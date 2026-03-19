@@ -72,7 +72,7 @@ def fetch_pr_info_api(owner: str, repo: str, pr_number: int,
     url = f"{API_BASE}/repos/{owner}/{repo}/pulls/{pr_number}"
     headers = {
         "Accept": "application/vnd.github+json",
-        "User-Agent": "go-vuln-lib/1.0"
+        "User-Agent": "go-vuln-insight/1.0"
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -92,7 +92,7 @@ def fetch_pr_diff_api(owner: str, repo: str, pr_number: int,
     url = f"{API_BASE}/repos/{owner}/{repo}/pulls/{pr_number}"
     headers = {
         "Accept": "application/vnd.github.diff",
-        "User-Agent": "go-vuln-lib/1.0"
+        "User-Agent": "go-vuln-insight/1.0"
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
