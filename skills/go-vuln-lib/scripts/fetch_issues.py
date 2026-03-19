@@ -220,6 +220,7 @@ def fetch_issues_api(owner: str, repo: str, labels: list[str],
         "CVE", "vulnerability", "security", "overflow",
         "crash+OR+panic", "null+pointer", "denial+of+service",
         "malformed", "bypass", "injection", "unauthorized",
+        "[Bugs]", "compliance", "over-authoriz", "unauthenticated",
     ]
     for kw in security_keywords:
         search_url = (f"{API_BASE}/search/issues"
@@ -227,7 +228,24 @@ def fetch_issues_api(owner: str, repo: str, labels: list[str],
                       f"&per_page=100")
         search_data = api_request(search_url, token)
         if isinstance(search_data, dict):
-            issues.extend(search_data.get("items", []))
+            for item in search_data.get("items", []):
+                if "pull_request" not in item:
+                    issues.append(item)
+
+    page = 1
+    while page <= 10:
+        url = (f"{API_BASE}/repos/{owner}/{repo}/issues"
+               f"?state={state}&per_page=100&page={page}"
+               f"&sort=created&direction=desc")
+        batch = api_request(url, token)
+        if not isinstance(batch, list) or not batch:
+            break
+        for item in batch:
+            if "pull_request" not in item:
+                issues.append(item)
+        if len(batch) < 100:
+            break
+        page += 1
 
     seen_ids = set()
     unique = []

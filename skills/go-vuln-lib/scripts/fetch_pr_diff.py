@@ -279,7 +279,8 @@ def main():
         commits = []
 
     if not pr_info:
-        print(f"错误：无法获取 PR #{args.pr} 的信息", file=sys.stderr)
+        print(f"错误：无法获取 PR #{args.pr} 的信息（可能不存在或为Issue而非PR）",
+              file=sys.stderr)
         sys.exit(1)
 
     file_changes = parse_diff(diff_text)

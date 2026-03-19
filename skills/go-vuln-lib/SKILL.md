@@ -235,6 +235,7 @@ python scripts/fetch_pr_diff.py --owner <owner> --repo <repo> --pr <PR编号>
 python scripts/parse_projects.py --help
 python scripts/fetch_issues.py --help
 python scripts/fetch_pr_diff.py --help
+python scripts/analyze.py --help
 ```
 
 ### 环境要求
@@ -243,17 +244,33 @@ python scripts/fetch_pr_diff.py --help
 - `gh` CLI（可选，用于更高效的GitHub API访问）
 - 网络连接（访问GitHub API）
 
-### 典型使用流程
+### 一键分析（推荐）
+
+使用端到端分析脚本自动完成数据采集：
+
+```bash
+python scripts/analyze.py examples/projects.md --output-dir ./analysis_data
+```
+
+该脚本会自动：
+1. 解析Markdown中的项目列表
+2. 对每个项目采集安全Issue
+3. 对关联PR获取代码diff
+4. 将结构化数据输出到指定目录
+
+采集完成后，Claude基于输出的JSON数据进行深度分析和报告生成。
+
+### 分步执行
 
 ```bash
 # 1. 解析项目列表
 python scripts/parse_projects.py examples/projects.md
 
 # 2. 采集漏洞信息
-python scripts/fetch_issues.py --owner free5gc --repo free5gc --labels security,bug --state all
+python scripts/fetch_issues.py --owner free5gc --repo free5gc --labels "" --state all --security-only
 
 # 3. 获取修复PR的代码差异
-python scripts/fetch_pr_diff.py --owner free5gc --repo free5gc --pr 123
+python scripts/fetch_pr_diff.py --owner free5gc --repo nas --pr 43
 
 # 4. 基于采集的数据进行分析并生成报告（由Claude完成）
 ```
