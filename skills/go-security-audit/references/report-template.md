@@ -1,373 +1,435 @@
-# Audit Report Template
+# 审计报告模板
 
-Use this template to structure the final security audit report in Phase 8. Fill in each section with findings from the preceding phases.
-
----
-
-## Report Header
-
-```
-# Security Audit Report: [Project Name]
-
-**Audit Date:** [Date]
-**Auditor:** Claude (AI-assisted code audit)
-**Audit Mode:** [Quick Scan / Deep Audit]
-**Audit Method:** [Pure LLM Audit / Tool Integration + LLM Audit]
-**Report Version:** 1.0
-```
+在阶段8中使用此模板构建最终安全审计报告。将各前序阶段的发现填入对应章节。
 
 ---
 
-## Section 1: Executive Summary
+## 报告输出规范
 
-Provide a concise overview aimed at technical leadership and security stakeholders.
+**输出目录：** `./reports/`
+**文件命名：** `[项目名称]-goaudit-[YYYYMMDD-HHMM].md`
+**示例：** `./reports/myproject-goaudit-20260319-1430.md`
+
+在生成报告前，先创建输出目录：
+```bash
+mkdir -p ./reports
+```
+
+项目名称获取规则：
+1. 优先从 `go.mod` 的 module 声明中提取最后一个路径段
+2. 如果不可用，使用项目根目录名
+3. 移除名称中的特殊字符，仅保留字母、数字、连字符和下划线
+
+时间使用审计执行时的当前时间，格式为 `YYYYMMDD-HHMM`。
+
+---
+
+## 报告头
 
 ```markdown
-## 1. Executive Summary
+# Go代码安全审计报告：[项目名称]
 
-### Overall Risk Assessment: [Critical / High / Medium / Low]
-
-This security audit of [project name] identified **[total count]** security findings:
-
-| Severity | Count |
-|----------|-------|
-| Critical | [N]   |
-| High     | [N]   |
-| Medium   | [N]   |
-| Low      | [N]   |
-| Info     | [N]   |
-
-### Key Findings
-
-1. **[Most critical finding title]** — [one-sentence description and impact]
-2. **[Second most critical finding]** — [one-sentence description and impact]
-3. **[Third most critical finding]** — [one-sentence description and impact]
-
-### Attack Chains Identified
-
-[N] attack chains were identified that combine multiple vulnerabilities for greater impact.
-The most severe chain: [brief description of the highest-impact chain].
-
-### Top Recommendations
-
-1. [Highest priority fix — what to do and why]
-2. [Second priority fix]
-3. [Third priority fix]
+**审计日期：** [YYYY-MM-DD]
+**审计执行：** Claude（AI辅助代码审计）
+**审计模式：** [快速扫描 / 深度审计]
+**审计方式：** [纯LLM审计 / 工具集成 + LLM审计]
+**报告版本：** 1.0
 ```
 
 ---
 
-## Section 2: Project Overview
+## 第1章：执行摘要
 
-Summarize the project background analysis from Phase 1.
+面向技术负责人和安全利益相关者的简明概述。
 
 ```markdown
-## 2. Project Overview
+## 1. 执行摘要
 
-### Project Type
-[e.g., REST API service, gRPC microservice, CLI tool]
+### 整体风险评估：[严重 / 高危 / 中危 / 低危]
 
-### Technology Stack
+本次对 [项目名称] 的安全审计共发现 **[总数]** 个安全问题：
 
-| Component | Technology |
-|-----------|-----------|
-| Language  | Go [version] |
-| Framework | [gin/echo/chi/...] |
-| Database  | [postgres/mysql/...] via [gorm/sqlx/...] |
-| Auth      | [JWT/OAuth2/session/...] |
-| Other     | [notable dependencies] |
+| 严重性 | 数量 |
+|--------|------|
+| 严重   | [N]  |
+| 高危   | [N]  |
+| 中危   | [N]  |
+| 低危   | [N]  |
+| 信息   | [N]  |
 
-### Architecture Overview
-[Brief description of the project architecture, key modules, trust boundaries]
+### 关键发现
 
-### Key Modules
+1. **[最严重发现标题]** — [一句话描述和影响]
+2. **[第二严重发现]** — [一句话描述和影响]
+3. **[第三严重发现]** — [一句话描述和影响]
 
-| Module | Description | Security Relevance |
-|--------|-------------|-------------------|
-| [module name] | [what it does] | [why it matters for security] |
+### 攻击链识别
+
+识别出 [N] 条攻击链，将多个漏洞组合为更高影响的利用路径。
+最严重的攻击链：[最高影响链的简要描述]。
+
+### 首要修复建议
+
+1. [最高优先级修复 — 做什么及为什么]
+2. [第二优先级修复]
+3. [第三优先级修复]
+```
+
+---
+
+## 第2章：项目概况
+
+汇总阶段1的项目背景分析。
+
+```markdown
+## 2. 项目概况
+
+### 项目类型
+[例：REST API服务、gRPC微服务、CLI工具]
+
+### 技术栈
+
+| 组件     | 技术 |
+|----------|------|
+| 语言     | Go [版本] |
+| 框架     | [gin/echo/chi/...] |
+| 数据库   | [postgres/mysql/...] 通过 [gorm/sqlx/...] |
+| 认证     | [JWT/OAuth2/会话/...] |
+| 其他     | [重要依赖] |
+
+### 架构概述
+[项目架构、关键模块、信任边界的简要描述]
+
+### 关键模块
+
+| 模块 | 说明 | 安全关联 |
+|------|------|----------|
+| [模块名] | [功能] | [安全重要性] |
 | ... | ... | ... |
 ```
 
 ---
 
-## Section 3: Audit Scope & Methodology
+## 第3章：审计范围与方法
 
-Document what was audited and how.
+记录审计内容和方法。
 
 ```markdown
-## 3. Audit Scope & Methodology
+## 3. 审计范围与方法
 
-### Scope
+### 范围
 
-**Included:**
-- [List of directories/modules/files audited]
-- [Specific functionality areas covered]
+**包含：**
+- [审计的目录/模块/文件列表]
+- [覆盖的具体功能区域]
 
-**Excluded:**
-- [Generated code, vendored dependencies, test files, etc.]
-- [Reason for each exclusion]
+**排除：**
+- [生成代码、vendor依赖、测试文件等]
+- [每项排除的原因]
 
-### Methodology
+### 方法论
 
-**Mode:** [Deep Audit / Quick Scan]
-**Method:** [Pure LLM Audit / Tool Integration + LLM Audit]
+**模式：** [深度审计 / 快速扫描]
+**方式：** [纯LLM审计 / 工具集成 + LLM审计]
 
-**Audit phases executed:**
-1. Project background analysis
-2. Audit strategy design based on [project type] profile
-3. [If tool integration] Tool scanning with [gosec, staticcheck, govulncheck, semgrep]
-4. LLM-based vulnerability discovery using Go vulnerability pattern library
-5. [If deep audit] Data flow tracking and taint analysis for each finding
-6. [If deep audit] False positive verification
-7. Vulnerability classification and CVSS-aligned severity rating
-8. [If deep audit] Attack chain combination analysis
+**执行的审计阶段：**
+1. 项目背景分析
+2. 基于 [项目类型] 特征的审计策略设计
+3. [如使用工具集成] 使用 [gosec, staticcheck, govulncheck, semgrep] 进行工具扫描
+4. 基于Go漏洞模式库的LLM漏洞发现
+5. [如深度审计] 对每个发现进行数据流追踪和污点分析
+6. [如深度审计] 误报验证
+7. 漏洞分类和CVSS对齐的严重性评级
+8. [如深度审计] 攻击链组合分析
 
-### Files Reviewed
+### 审查文件
 
-[Total files reviewed: N]
+[总审查文件数: N]
 
-| Category | Files | Examples |
-|----------|-------|---------|
-| Handlers/Controllers | [N] | [file list] |
-| Middleware | [N] | [file list] |
-| Data Access | [N] | [file list] |
-| Business Logic | [N] | [file list] |
-| Configuration | [N] | [file list] |
-| Other | [N] | [file list] |
+| 类别 | 文件数 | 示例 |
+|------|--------|------|
+| 处理器/控制器 | [N] | [文件列表] |
+| 中间件 | [N] | [文件列表] |
+| 数据访问 | [N] | [文件列表] |
+| 业务逻辑 | [N] | [文件列表] |
+| 配置 | [N] | [文件列表] |
+| 其他 | [N] | [文件列表] |
 ```
 
 ---
 
-## Section 4: Findings Summary
+## 第4章：发现汇总
 
-A sortable overview table of all findings.
+所有发现的概览表格。
 
 ```markdown
-## 4. Findings Summary
+## 4. 发现汇总
 
-| ID | Title | Severity | CWE | Location | Confidence |
-|----|-------|----------|-----|----------|------------|
-| VULN-001 | [title] | Critical | CWE-89 | `pkg/handler/user.go:45` | Confirmed |
-| VULN-002 | [title] | High | CWE-287 | `pkg/auth/jwt.go:23` | Confirmed |
-| VULN-003 | [title] | Medium | CWE-200 | `pkg/middleware/error.go:12` | Likely |
+| ID | 标题 | 严重性 | CWE | 位置 | 置信度 |
+|----|------|--------|-----|------|--------|
+| VULN-001 | [标题] | 严重 | CWE-89 | `pkg/handler/user.go:45` | 确认 |
+| VULN-002 | [标题] | 高危 | CWE-287 | `pkg/auth/jwt.go:23` | 确认 |
+| VULN-003 | [标题] | 中危 | CWE-200 | `pkg/middleware/error.go:12` | 可能 |
 | ... | ... | ... | ... | ... | ... |
 
-### Severity Distribution
+### 严重性分布
 
-- **Critical:** [N] findings requiring immediate remediation
-- **High:** [N] findings requiring prompt attention
-- **Medium:** [N] findings to address in the near term
-- **Low:** [N] findings to address when feasible
-- **Informational:** [N] best practice recommendations
+- **严重：** [N] 个发现，需要立即修复
+- **高危：** [N] 个发现，需要尽快关注
+- **中危：** [N] 个发现，短期内处理
+- **低危：** [N] 个发现，合适时处理
+- **信息：** [N] 条最佳实践建议
 ```
 
 ---
 
-## Section 5: Detailed Findings
+## 第5章：详细发现
 
-For each vulnerability, provide the full analysis. Repeat this block for every finding.
+对每个漏洞提供完整分析。对每个发现重复此模块。
 
 ```markdown
-## 5. Detailed Findings
+## 5. 详细发现
 
 ---
 
-### VULN-[ID]: [Descriptive Title]
+### VULN-[ID]：[描述性标题]
 
-**Severity:** [Critical / High / Medium / Low / Info]
-**CVSS Score:** [X.X] ([vector string if applicable])
-**CWE:** CWE-[ID] — [CWE Name]
-**Confidence:** [Confirmed / Likely / Suspicious]
-**Location:** `[file]:[line range]` in function `[function name]`
+**严重性：** [严重 / 高危 / 中危 / 低危 / 信息]
+**CVSS评分：** [X.X]（[向量字符串（如适用）]）
+**CWE：** CWE-[ID] — [CWE名称]
+**置信度：** [确认 / 可能 / 存疑]
+**位置：** `[文件]:[行范围]` 函数 `[函数名]`
 
-#### Description
+#### 漏洞描述
 
-[Clear explanation of the vulnerability. What is the issue, what makes it exploitable,
-and what is the security impact.]
+[对漏洞的清晰解释。问题是什么，为什么可被利用，安全影响是什么。]
 
-#### Vulnerable Code
+#### 漏洞代码
+
+[展示包含漏洞的完整函数或代码段，标注漏洞行。代码片段应包含足够上下文，
+使审阅者无需查看源码即可理解问题。]
 
 ```go
-// file: [filepath]
-// lines: [start]-[end]
-[paste the vulnerable code snippet]
+// 文件: [文件路径]
+// 行: [起始]-[结束]
+// 漏洞行已用注释标记
+
+[包含漏洞的完整函数代码]
+// ↑ 漏洞: [简要说明漏洞原因]
 ```
 
-#### Data Flow Path
+#### 数据流路径（结构化污点分析）
 
-[For Deep Audit mode — show the traced source-to-sink path]
+[深度审计模式下，展示结构化的source到sink追踪路径。]
+
+┌─────────────────────────────────────────────────────────┐
+│ 数据流追踪                                                │
+│ 漏洞ID: VULN-[ID]                                        │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│ ◆ Source（污点源）                                        │
+│   位置: [文件路径]:[行号] @ [函数名]                       │
+│   类型: [HTTP参数/请求体/URL路径/Cookie/Header/外部输入]   │
+│   表达式: [具体代码表达式]                                 │
+│                                                          │
+│ ◆ 传播路径                                               │
+│   ┌──────┬──────────────────┬──────────────┬───────────┐ │
+│   │ 序号 │ 位置              │ 操作          │ 污点状态  │ │
+│   ├──────┼──────────────────┼──────────────┼───────────┤ │
+│   │  1   │ file:line@func   │ 赋值给变量x   │ 传播      │ │
+│   │  2   │ file:line@func   │ 作为参数传入   │ 传播      │ │
+│   │  3   │ file:line@func   │ fmt.Sprintf   │ 传播      │ │
+│   │ ...  │ ...              │ ...          │ ...       │ │
+│   └──────┴──────────────────┴──────────────┴───────────┘ │
+│                                                          │
+│ ◆ Sink（汇聚点）                                         │
+│   位置: [文件路径]:[行号] @ [函数名]                       │
+│   危险操作: [具体API调用，如db.Exec()]                     │
+│   表达式: [具体代码表达式]                                 │
+│                                                          │
+│ ◆ 净化检查                                               │
+│   已发现净化措施: [有/无]                                  │
+│   净化详情: [具体净化函数及位置] 或 [未发现有效净化]        │
+│   净化有效性: [有效/无效/不适用]                           │
+│                                                          │
+│ ◆ 结论                                                   │
+│   可达性: [可达/不可达/条件可达]                            │
+│   可利用性: [确认/可能/存疑]                               │
+│   完整调用链:                                             │
+│   [入口函数] → [中间函数1] → [中间函数2] → ... → [Sink]   │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+
+#### 利用场景
+
+[攻击者如何利用此漏洞的逐步描述。
+包含具体示例 — HTTP请求、CLI输入或gRPC调用。]
 
 ```
-Source: [where untrusted data enters]
-  → [propagation step 1 — file:function]
-  → [propagation step 2 — file:function]
-  → [sanitization check: NONE FOUND / found but insufficient because...]
-  → Sink: [dangerous operation — file:function:line]
+攻击示例:
+  [curl命令、gRPC调用或演示利用的代码片段]
 ```
 
-#### Exploitation Scenario
+#### 影响
 
-[Step-by-step description of how an attacker could exploit this vulnerability.
-Include a concrete example — a sample HTTP request, CLI input, or gRPC call.]
+- **机密性：** [无 / 低 / 高 — 说明]
+- **完整性：** [无 / 低 / 高 — 说明]
+- **可用性：** [无 / 低 / 高 — 说明]
 
-```
-Example attack:
-  [curl command, gRPC call, or code snippet demonstrating exploitation]
-```
+#### 修复建议
 
-#### Impact
+[具体、可操作的修复及Go代码示例]
 
-- **Confidentiality:** [None / Low / High — explain]
-- **Integrity:** [None / Low / High — explain]
-- **Availability:** [None / Low / High — explain]
-
-#### Remediation
-
-[Specific, actionable fix with Go code example]
-
-**Recommended fix:**
+**修复前（漏洞代码）：**
 
 ```go
-// file: [filepath]
-// Replace vulnerable code with:
-[corrected code snippet]
+// 文件: [文件路径]
+[漏洞代码]
 ```
 
-**Additional hardening:**
-- [Any defense-in-depth measures]
+**修复后（安全代码）：**
+
+```go
+// 文件: [文件路径]
+[修复后的代码]
+```
+
+**额外加固措施：**
+- [任何纵深防御措施]
 
 ---
 ```
 
 ---
 
-## Section 6: Attack Chain Analysis
+## 第6章：攻击链分析
 
-Present attack chains identified in Phase 7.
+展示阶段7识别的攻击链。
 
 ```markdown
-## 6. Attack Chain Analysis
+## 6. 攻击链分析
 
-### Chain 1: [Descriptive Name]
+### 攻击链1：[描述性名称]
 
-**Combined Severity:** [Critical / High / Medium]
-**Vulnerabilities involved:** VULN-[ID1], VULN-[ID2], VULN-[ID3]
+**组合严重性：** [严重 / 高危 / 中危]
+**涉及漏洞：** VULN-[ID1], VULN-[ID2], VULN-[ID3]
 
-**Attack narrative:**
+**攻击叙述：**
 
-| Step | Vulnerability | Action | Attacker Gains |
-|------|--------------|--------|---------------|
-| 1 | VULN-[ID1]: [title] | [what the attacker does] | [what capability they gain] |
-| 2 | VULN-[ID2]: [title] | [using output of step 1, attacker does...] | [escalated capability] |
-| 3 | VULN-[ID3]: [title] | [using output of step 2, attacker does...] | [final impact] |
+| 步骤 | 漏洞 | 攻击动作 | 攻击者获得 |
+|------|------|----------|-----------|
+| 1 | VULN-[ID1]：[标题] | [攻击者做什么] | [获得的能力] |
+| 2 | VULN-[ID2]：[标题] | [利用步骤1的输出...] | [升级的能力] |
+| 3 | VULN-[ID3]：[标题] | [利用步骤2的输出...] | [最终影响] |
 
-**Preconditions:** [What the attacker needs before starting — e.g., network access, valid low-privilege account]
+**前置条件：** [攻击者开始前需要什么 — 如：网络访问、有效的低权限账户]
 
-**Final Impact:** [Ultimate consequence — e.g., full database access, RCE as service account, complete account takeover]
+**最终影响：** [最终后果 — 如：完全数据库访问、以服务账户执行RCE、完全账户接管]
 
-**Chain Validation:** [Confirm that each step's output concretely enables the next step. Reference specific code paths and data flows.]
+**链验证：** [确认每步的输出切实启用了下一步。引用具体代码路径和数据流。]
 
 ---
 
-[Repeat for additional chains]
+[其他链重复以上格式]
 
-### No Attack Chains Identified
+### 未识别到攻击链
 
-[If no valid chains were found, state this explicitly:]
+[如果未发现有效链，明确说明：]
 
-No attack chains were identified. The discovered vulnerabilities are independent and
-do not enable meaningful chained exploitation beyond their individual impact.
+未识别到有效攻击链。发现的漏洞是独立的，不构成超出单个影响的有意义的链式利用。
 ```
 
 ---
 
-## Section 7: Remediation Priority Matrix
+## 第7章：修复优先级矩阵
 
-Order fixes by impact-to-effort ratio to guide development planning.
+按影响/投入比排序修复清单，指导开发计划。
 
 ```markdown
-## 7. Remediation Priority Matrix
+## 7. 修复优先级矩阵
 
-| Priority | Finding ID | Title | Severity | Estimated Effort | Rationale |
-|----------|-----------|-------|----------|-----------------|-----------|
-| 1 | VULN-[ID] | [title] | Critical | Low | [Simple fix, high impact — e.g., add parameterized queries] |
-| 2 | VULN-[ID] | [title] | Critical | Medium | [Requires refactoring auth middleware] |
-| 3 | VULN-[ID] | [title] | High | Low | [Add input validation — quick win] |
-| 4 | VULN-[ID] | [title] | High | High | [Architectural change needed for proper access control] |
+| 优先级 | 发现ID | 标题 | 严重性 | 预估投入 | 理由 |
+|--------|--------|------|--------|----------|------|
+| 1 | VULN-[ID] | [标题] | 严重 | 低 | [简单修复，高影响 — 如：添加参数化查询] |
+| 2 | VULN-[ID] | [标题] | 严重 | 中 | [需要重构认证中间件] |
+| 3 | VULN-[ID] | [标题] | 高危 | 低 | [添加输入验证 — 速赢] |
+| 4 | VULN-[ID] | [标题] | 高危 | 高 | [需要架构变更以实现正确的访问控制] |
 | ... | ... | ... | ... | ... | ... |
 
-### Remediation Categories
+### 修复分类
 
-**Immediate (address before next deployment):**
-- [List of critical findings that should block deployment]
+**立即处理（下次部署前）：**
+- [应阻止部署的严重发现列表]
 
-**Short-term (address within current sprint/cycle):**
-- [List of high findings]
+**短期处理（当前迭代/周期内）：**
+- [高危发现列表]
 
-**Medium-term (plan for upcoming work):**
-- [List of medium findings and architectural improvements]
+**中期处理（规划到后续工作中）：**
+- [中危发现和架构改进列表]
 
-**Long-term (technical debt / hardening):**
-- [List of low/info findings and defense-in-depth measures]
+**长期处理（技术债务/加固）：**
+- [低危/信息发现和纵深防御措施列表]
 ```
 
 ---
 
-## Section 8: Appendices
+## 第8章：附录
 
 ```markdown
-## 8. Appendices
+## 8. 附录
 
-### A. Tool Scan Results
+### A. 工具扫描结果
 
-[If tool integration mode was used, include summarized tool outputs]
+[如使用了工具集成模式，包含工具输出摘要]
 
-**gosec:** [N] findings ([N] high, [N] medium, [N] low)
-**staticcheck:** [N] findings
-**govulncheck:** [N] known vulnerabilities in dependencies
-**semgrep:** [N] findings
+**gosec：** [N] 个发现（[N] 高危, [N] 中危, [N] 低危）
+**staticcheck：** [N] 个发现
+**govulncheck：** [N] 个依赖中的已知漏洞
+**semgrep：** [N] 个发现
 
-[Include notable tool findings or reference attached JSON files]
+[包含重要工具发现或引用附属JSON文件]
 
-### B. Full File List
+### B. 完整文件列表
 
-[Complete list of all files reviewed during the audit]
+[审计期间审查的所有文件完整列表]
 
-### C. Dismissed False Positives
+### C. 排除的误报
 
-| Finding | Location | Reason Dismissed |
-|---------|----------|-----------------|
-| [description] | `file:line` | [Effective sanitization found at file:line — parameterized query] |
-| [description] | `file:line` | [Path unreachable — endpoint requires admin auth and internal network] |
+| 发现 | 位置 | 排除原因 |
+|------|------|----------|
+| [描述] | `文件:行` | [在文件:行发现有效净化 — 参数化查询] |
+| [描述] | `文件:行` | [路径不可达 — 端点需要管理员认证和内部网络] |
 | ... | ... | ... |
 
-### D. Methodology Notes
+### D. 方法论说明
 
-- Vulnerability pattern library version: [date/version]
-- Audit strategy template used: [template name]
-- [Any deviations from standard methodology and reason]
-- [Limitations of the audit — areas not covered and why]
+- 漏洞模式库版本：[日期/版本]
+- 使用的审计策略模板：[模板名称]
+- [任何偏离标准方法论的情况及原因]
+- [审计限制 — 未覆盖的区域及原因]
 ```
 
 ---
 
-## Formatting Guidelines
+## 格式指南
 
-1. **Severity colors** — if rendering in Markdown with HTML support, use color indicators:
-   - Critical: red
-   - High: orange
-   - Medium: yellow
-   - Low: blue
-   - Info: gray
+1. **严重性标识** — 使用中文标签：严重、高危、中危、低危、信息
 
-2. **Code snippets** — always include file path and line numbers for traceability
+2. **代码片段** — 始终包含文件路径和行号以便追溯。漏洞代码片段应包含完整函数体或足够上下文
 
-3. **Data flow paths** — use arrow notation (`→`) consistently, one step per line
+3. **数据流路径** — 使用结构化表格格式（如第5章模板所示），明确标注：
+   - Source：污点源位置、类型、表达式
+   - 传播路径：逐节点列出位置、操作、污点状态
+   - Sink：汇聚点位置、危险操作、表达式
+   - 净化检查：是否存在净化、有效性评估
+   - 结论：可达性、可利用性、完整调用链
 
-4. **Findings IDs** — use sequential `VULN-001`, `VULN-002` format
+4. **发现ID** — 使用顺序 `VULN-001`、`VULN-002` 格式
 
-5. **Remediation code** — show both the "before" (vulnerable) and "after" (fixed) code
+5. **修复代码** — 同时展示"修复前"（漏洞代码）和"修复后"（安全代码）的对比
 
-6. **Attack chains** — use numbered steps with clear transitions; each step must reference the specific vulnerability ID
+6. **攻击链** — 使用编号步骤和清晰过渡；每步必须引用具体漏洞ID
 
-7. **Report length** — be thorough but not verbose. Each finding should be self-contained so a developer can read just their assigned finding and have everything needed to fix it.
+7. **报告语言** — 全文使用中文，技术术语保持英文（如CWE、CVSS、SSRF等）
+
+8. **报告长度** — 详尽但不冗余。每个发现应自包含，开发者仅凭报告即可修复

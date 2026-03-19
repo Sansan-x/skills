@@ -1,199 +1,198 @@
-# Audit Strategy Templates
+# 审计策略模板
 
-Pre-built audit strategy templates for common Go project types. Use these as a starting point in Phase 3 and customize based on the specific project's characteristics identified in Phase 1.
+针对常见Go项目类型的预构建审计策略模板。在阶段3中以此为起点，根据阶段1识别的项目具体特征进行定制。
 
-## Table of Contents
+## 目录
 
-1. [Web API / REST Service](#1-web-api--rest-service)
-2. [gRPC Microservice](#2-grpc-microservice)
-3. [Web Application (Server-Side Rendering)](#3-web-application-server-side-rendering)
-4. [CLI Tool](#4-cli-tool)
+1. [Web API / REST 服务](#1-web-api--rest-服务)
+2. [gRPC 微服务](#2-grpc-微服务)
+3. [Web应用（服务端渲染）](#3-web应用服务端渲染)
+4. [命令行工具](#4-命令行工具)
 5. [Kubernetes Operator / Controller](#5-kubernetes-operator--controller)
-6. [Blockchain / DeFi Application](#6-blockchain--defi-application)
-7. [Library / SDK](#7-library--sdk)
-8. [File Processing Service](#8-file-processing-service)
-9. [Gateway / Proxy Service](#9-gateway--proxy-service)
+6. [区块链 / DeFi 应用](#6-区块链--defi-应用)
+7. [库 / SDK](#7-库--sdk)
+8. [文件处理服务](#8-文件处理服务)
+9. [网关 / 代理服务](#9-网关--代理服务)
 
 ---
 
-## 1. Web API / REST Service
+## 1. Web API / REST 服务
 
-**Typical stack:** gin / echo / chi / fiber + GORM / sqlx + JWT / OAuth2
+**典型技术栈：** gin / echo / chi / fiber + GORM / sqlx + JWT / OAuth2
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | SQL Injection | Direct database interaction with user input |
-| P0 | Broken Authentication | JWT/session handling flaws grant full access |
-| P0 | Broken Access Control / IDOR | API endpoints expose resources by ID |
-| P1 | SSRF | APIs often proxy or fetch external resources |
-| P1 | Mass Assignment | JSON binding to structs may expose internal fields |
-| P1 | Information Disclosure | Error responses may leak internals |
-| P2 | Rate Limiting / DoS | APIs are publicly accessible |
-| P2 | CORS Misconfiguration | Cross-origin security |
-| P2 | Log Injection | Request data logged without sanitization |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | SQL注入 | 用户输入直接与数据库交互 |
+| P0 | 认证缺陷 | JWT/会话处理缺陷可导致完全访问 |
+| P0 | 访问控制缺陷 / IDOR | API端点按ID暴露资源 |
+| P1 | SSRF | API经常代理或获取外部资源 |
+| P1 | 批量赋值 | JSON绑定到结构体可能暴露内部字段 |
+| P1 | 信息泄露 | 错误响应可能泄露内部信息 |
+| P2 | 限流 / DoS | API可公开访问 |
+| P2 | CORS配置错误 | 跨域安全 |
+| P2 | 日志注入 | 请求数据未净化直接记录日志 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- All route definitions and handler functions
-- Authentication middleware and token validation logic
-- Authorization checks in every handler (IDOR focus)
-- Database query construction in all data access functions
-- Request body binding and input validation
-- Error handling and response formatting
-- CORS configuration
-- Rate limiting configuration
+**必须审计：**
+- 所有路由定义和处理函数
+- 认证中间件和token验证逻辑
+- 每个处理器中的授权检查（IDOR重点）
+- 所有数据访问函数中的数据库查询构建
+- 请求体绑定和输入验证
+- 错误处理和响应格式化
+- CORS配置
+- 限流配置
 
-**Key file patterns to locate:**
+**需定位的关键文件模式：**
 ```
 **/router.go, **/routes.go, **/handler*.go, **/controller*.go
 **/middleware*.go, **/auth*.go
 **/model*.go, **/repository*.go, **/dao*.go, **/store*.go
-**/service*.go (business logic layer)
+**/service*.go（业务逻辑层）
 **/config*.go, **/main.go
 ```
 
-### Mass Assignment — Go-Specific Check
+### 批量赋值 — Go特有检查
 
-In Go REST APIs, `c.BindJSON(&req)` or `json.Decode` maps JSON fields to struct fields. If the struct has fields that should not be user-settable (e.g., `IsAdmin`, `Role`, `ID`), check that either:
-- A separate DTO struct is used for input (without sensitive fields)
-- Sensitive fields have `json:"-"` tag
-- Manual field copying is used instead of full struct binding
+在Go REST API中，`c.BindJSON(&req)` 或 `json.Decode` 将JSON字段映射到结构体字段。如果结构体含有不应由用户设置的字段（如 `IsAdmin`、`Role`、`ID`），检查是否：
+- 使用了单独的DTO结构体（不含敏感字段）
+- 敏感字段设置了 `json:"-"` 标签
+- 使用手动字段拷贝而非完整结构体绑定
 
-**Vulnerable:**
+**漏洞示例：**
 ```go
 type User struct {
     ID      int    `json:"id"`
     Name    string `json:"name"`
-    IsAdmin bool   `json:"is_admin"`  // settable via JSON input
+    IsAdmin bool   `json:"is_admin"`  // 可通过JSON输入设置
 }
 func CreateUser(c *gin.Context) {
     var user User
-    c.BindJSON(&user)
+    c.BindJSON(&user)  // 攻击者可设置 is_admin=true
     db.Create(&user)
 }
 ```
 
 ---
 
-## 2. gRPC Microservice
+## 2. gRPC 微服务
 
-**Typical stack:** gRPC + protobuf + gorm/ent + internal service mesh
+**典型技术栈：** gRPC + protobuf + gorm/ent + 内部服务网格
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | Auth Interceptor Bypass | Missing or misconfigured auth in interceptors |
-| P0 | SQL Injection | Backend database queries |
-| P0 | Privilege Escalation | Service-to-service trust assumptions |
-| P1 | Metadata Injection | Client-controlled gRPC metadata used for authorization |
-| P1 | Protobuf Message Validation | Missing field validation on incoming messages |
-| P1 | Insecure Inter-Service Communication | Plaintext gRPC without mTLS |
-| P2 | Resource Exhaustion | Large message payloads, streaming abuse |
-| P2 | Reflection Enabled in Production | Service discovery exposure |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | 认证拦截器绕过 | 拦截器中认证缺失或配置错误 |
+| P0 | SQL注入 | 后端数据库查询 |
+| P0 | 权限提升 | 服务间信任假设 |
+| P1 | 元数据注入 | 客户端可控的gRPC元数据用于授权 |
+| P1 | Protobuf消息验证 | 传入消息缺少字段验证 |
+| P1 | 不安全的服务间通信 | 无mTLS的明文gRPC |
+| P2 | 资源耗尽 | 大消息载荷、流式传输滥用 |
+| P2 | 生产环境启用反射 | 服务发现暴露 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- gRPC server initialization and interceptor chain
-- All RPC method implementations
-- Protobuf message definitions (check for missing validation)
-- Metadata extraction and usage in authorization
-- TLS / mTLS configuration for inter-service calls
-- Database queries within RPC handlers
-- Error status codes and messages (information leakage)
+**必须审计：**
+- gRPC服务器初始化和拦截器链
+- 所有RPC方法实现
+- Protobuf消息定义（检查缺失的验证）
+- 元数据提取和在授权中的使用
+- 服务间调用的TLS / mTLS配置
+- RPC处理器中的数据库查询
+- 错误状态码和消息（信息泄露）
 
-**Key file patterns:**
+**关键文件模式：**
 ```
-**/*.proto (message and service definitions)
+**/*.proto（消息和服务定义）
 **/server.go, **/grpc*.go
 **/interceptor*.go, **/middleware*.go
 **/service*.go, **/handler*.go
 **/repository*.go, **/store*.go
 ```
 
-### Inter-Service Trust Check
+### 服务间信任检查
 
-In microservice architectures, services often trust each other implicitly. Verify:
-- Does service A validate that requests from service B are legitimate (mutual TLS, signed tokens)?
-- If service A calls service B with elevated privileges, can a compromised service B abuse those privileges?
-- Are internal-only endpoints actually unreachable from outside the service mesh?
+微服务架构中，服务间往往存在隐式信任。验证：
+- 服务A是否验证来自服务B的请求合法性（双向TLS、签名token）？
+- 如果服务A以提升的权限调用服务B，被攻陷的服务B能否滥用这些权限？
+- 仅限内部的端点是否真的无法从服务网格外部访问？
 
 ---
 
-## 3. Web Application (Server-Side Rendering)
+## 3. Web应用（服务端渲染）
 
-**Typical stack:** net/http / gin + html/template / text/template + sessions
+**典型技术栈：** net/http / gin + html/template / text/template + sessions
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | XSS | Server-rendered HTML with user data |
-| P0 | SQL Injection | Form data → database queries |
-| P0 | CSRF | State-changing forms without CSRF tokens |
-| P0 | Session Management Flaws | Cookie-based sessions |
-| P1 | Path Traversal | File serving, upload/download |
-| P1 | Open Redirect | Login/logout redirect URLs |
-| P1 | SSTI | If user input reaches template parsing |
-| P2 | Clickjacking | Missing X-Frame-Options |
-| P2 | Information Disclosure | Error pages, debug mode |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | XSS | 服务端渲染含用户数据的HTML |
+| P0 | SQL注入 | 表单数据 → 数据库查询 |
+| P0 | CSRF | 无CSRF token的状态变更表单 |
+| P0 | 会话管理缺陷 | 基于Cookie的会话 |
+| P1 | 路径穿越 | 文件服务、上传/下载 |
+| P1 | 开放重定向 | 登录/登出重定向URL |
+| P1 | SSTI | 如果用户输入到达模板解析 |
+| P2 | 点击劫持 | 缺少X-Frame-Options |
+| P2 | 信息泄露 | 错误页面、调试模式 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- Template files and rendering logic (html/template vs text/template)
-- All uses of `template.HTML()`, `template.JS()`, `template.URL()` type casts
-- Form handling and CSRF token validation
-- Session creation, validation, and destruction
-- Cookie attributes (Secure, HttpOnly, SameSite)
-- Static file serving configuration
-- Redirect logic after login/logout
+**必须审计：**
+- 模板文件和渲染逻辑（html/template vs text/template）
+- 所有 `template.HTML()`、`template.JS()`、`template.URL()` 类型转换
+- 表单处理和CSRF token验证
+- 会话创建、验证和销毁
+- Cookie属性（Secure、HttpOnly、SameSite）
+- 静态文件服务配置
+- 登录/登出后的重定向逻辑
 
-**Key file patterns:**
+**关键文件模式：**
 ```
 **/templates/**/*.html, **/views/**/*.html
 **/handler*.go, **/controller*.go
 **/session*.go, **/auth*.go
 **/middleware*.go
-**/static*.go, **/assets*.go
 ```
 
 ---
 
-## 4. CLI Tool
+## 4. 命令行工具
 
-**Typical stack:** cobra / urfave/cli + os/exec + file I/O
+**典型技术栈：** cobra / urfave/cli + os/exec + 文件I/O
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | Command Injection | CLI tools often shell out to other commands |
-| P0 | Argument Injection | User arguments passed to subprocesses |
-| P1 | Path Traversal | File operations with user-provided paths |
-| P1 | Credential Exposure | Secrets in config files, environment, command history |
-| P1 | Insecure Temp Files | Predictable temporary file names |
-| P2 | Privilege Escalation | SUID/SGID behavior, sudo interactions |
-| P2 | Symlink Attacks | Following symlinks to sensitive files |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | 命令注入 | CLI工具常调用其他命令 |
+| P0 | 参数注入 | 用户参数传递给子进程 |
+| P1 | 路径穿越 | 用户提供路径的文件操作 |
+| P1 | 凭证暴露 | 配置文件、环境变量、命令历史中的密钥 |
+| P1 | 不安全临时文件 | 可预测的临时文件名 |
+| P2 | 权限提升 | SUID/SGID行为、sudo交互 |
+| P2 | 符号链接攻击 | 跟随符号链接到敏感文件 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- All `exec.Command` calls and how arguments are constructed
-- File I/O operations with user-controlled paths
-- Configuration file parsing (YAML, TOML, JSON) for injection points
-- Secret/credential handling (reading, storing, passing to subprocesses)
-- Temporary file creation patterns
-- Signal handling and cleanup routines
-- Plugin loading mechanisms (if any)
+**必须审计：**
+- 所有 `exec.Command` 调用及参数构建方式
+- 用户控制路径的文件I/O操作
+- 配置文件解析（YAML、TOML、JSON）的注入点
+- 密钥/凭证处理（读取、存储、传递给子进程）
+- 临时文件创建模式
+- 信号处理和清理例程
+- 插件加载机制（如有）
 
-**Key file patterns:**
+**关键文件模式：**
 ```
-**/cmd/**/*.go (cobra command definitions)
+**/cmd/**/*.go（cobra命令定义）
 **/main.go
 **/config*.go
 **/exec*.go, **/run*.go, **/shell*.go
@@ -203,154 +202,154 @@ In microservice architectures, services often trust each other implicitly. Verif
 
 ## 5. Kubernetes Operator / Controller
 
-**Typical stack:** controller-runtime / client-go / kubebuilder
+**典型技术栈：** controller-runtime / client-go / kubebuilder
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | RBAC Misconfiguration | Operator permissions too broad |
-| P0 | Secret Exposure | Reading/creating secrets with sensitive data |
-| P0 | Privilege Escalation | Creating pods with elevated privileges |
-| P1 | Input Validation on CRDs | Malicious custom resource specs |
-| P1 | SSRF via Controller Logic | Controller fetching external resources based on CR spec |
-| P1 | Container Escape Vectors | SecurityContext not set or too permissive |
-| P2 | Information Disclosure | Sensitive data in CRD status, events, or logs |
-| P2 | DoS via Resource Creation | Creating unbounded resources from a single CR |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | RBAC配置错误 | Operator权限过宽 |
+| P0 | 密钥暴露 | 读取/创建含敏感数据的Secret |
+| P0 | 权限提升 | 创建具有提升权限的Pod |
+| P1 | CRD输入验证 | 恶意自定义资源规格 |
+| P1 | 控制器逻辑中的SSRF | 控制器基于CR规格获取外部资源 |
+| P1 | 容器逃逸向量 | SecurityContext未设置或过于宽松 |
+| P2 | 信息泄露 | CRD状态、事件或日志中的敏感数据 |
+| P2 | 资源创建导致DoS | 从单个CR创建无限资源 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- RBAC manifests (ClusterRole, Role definitions)
-- Reconcile loop logic (what does the operator create/modify/delete?)
-- CRD validation (webhook validators, schema constraints)
-- Secret reading and creation patterns
-- Pod spec generation (SecurityContext, capabilities, volumes)
-- External resource fetching in reconcile loops
-- Finalizer logic (cleanup on deletion)
+**必须审计：**
+- RBAC清单（ClusterRole、Role定义）
+- Reconcile循环逻辑（Operator创建/修改/删除了什么？）
+- CRD验证（webhook验证器、schema约束）
+- Secret读取和创建模式
+- Pod规格生成（SecurityContext、capabilities、volumes）
+- Reconcile循环中的外部资源获取
+- Finalizer逻辑（删除时的清理）
 
-**Key file patterns:**
+**关键文件模式：**
 ```
 **/controllers/**/*.go, **/reconciler*.go
-**/api/**/*.go (CRD type definitions)
+**/api/**/*.go（CRD类型定义）
 **/webhook*.go
 config/rbac/*.yaml
 config/manager/*.yaml
-**/main.go, **/suite_test.go
+**/main.go
 ```
 
 ---
 
-## 6. Blockchain / DeFi Application
+## 6. 区块链 / DeFi 应用
 
-**Typical stack:** cosmos-sdk / go-ethereum / tendermint
+**典型技术栈：** cosmos-sdk / go-ethereum / tendermint
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | Integer Overflow/Underflow | Financial calculations with token amounts |
-| P0 | Access Control on Transactions | Unauthorized transaction execution |
-| P0 | Reentrancy-like Patterns | State modifications before external calls |
-| P0 | Cryptographic Flaws | Key management, signature verification |
-| P1 | Denial of Service | Transaction processing resource exhaustion |
-| P1 | Front-Running Vectors | Transaction ordering dependency |
-| P1 | Oracle Manipulation | External data feed trust assumptions |
-| P2 | Information Disclosure | Private key leakage, transaction metadata |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | 整数溢出/下溢 | 代币金额的金融计算 |
+| P0 | 交易访问控制 | 未授权的交易执行 |
+| P0 | 重入类模式 | 外部调用前的状态修改 |
+| P0 | 密码学缺陷 | 密钥管理、签名验证 |
+| P1 | 拒绝服务 | 交易处理资源耗尽 |
+| P1 | 抢跑向量 | 交易排序依赖 |
+| P1 | 预言机操纵 | 外部数据源信任假设 |
+| P2 | 信息泄露 | 私钥泄露、交易元数据 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- Transaction handlers / message handlers
-- Token transfer and balance modification logic
-- Signature verification and key management
-- State machine transitions
-- Mathematical operations on financial values (overflow checks)
-- Consensus-related logic
-- External data source (oracle) integration
-
----
-
-## 7. Library / SDK
-
-**Typical stack:** Pure Go library with public API
-
-### Priority Matrix
-
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | Input Validation on Public API | Library consumers pass untrusted data |
-| P0 | Memory Safety | Unsafe pointer operations, buffer handling |
-| P1 | Resource Exhaustion | Unbounded allocations from caller input |
-| P1 | Cryptographic Misuse | If library provides crypto operations |
-| P1 | Concurrency Safety | Race conditions in concurrent use |
-| P2 | Error Handling | Panics that crash the caller's application |
-| P2 | Dependency Chain | Transitive vulnerability exposure |
-
-### Scope Definition
-
-**Must audit:**
-- All exported functions and methods (the public API surface)
-- Input validation on every public function parameter
-- Use of `unsafe` package
-- Goroutine safety guarantees vs actual implementation
-- Panic vs error return behavior
-- Dependencies and their vulnerability status
+**必须审计：**
+- 交易处理器/消息处理器
+- 代币转账和余额修改逻辑
+- 签名验证和密钥管理
+- 状态机转换
+- 金融值的数学运算（溢出检查）
+- 共识相关逻辑
+- 外部数据源（预言机）集成
 
 ---
 
-## 8. File Processing Service
+## 7. 库 / SDK
 
-**Typical stack:** net/http + archive/zip / archive/tar + image processing
+**典型技术栈：** 纯Go库，提供公开API
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | Path Traversal / Zip Slip | Archive extraction with crafted filenames |
-| P0 | Command Injection | Shelling out to image/document processors |
-| P1 | Decompression Bomb | Compressed files expanding to huge sizes |
-| P1 | Symlink Attacks | Tar/zip entries that are symlinks |
-| P1 | Resource Exhaustion | Processing large or malformed files |
-| P2 | SSRF | If files contain URLs that are fetched |
-| P2 | Content Type Confusion | File extension vs actual content mismatch |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | 公开API输入验证 | 库使用者传入不可信数据 |
+| P0 | 内存安全 | unsafe指针操作、缓冲区处理 |
+| P1 | 资源耗尽 | 调用者输入导致无限分配 |
+| P1 | 密码学误用 | 如果库提供加密操作 |
+| P1 | 并发安全 | 并发使用中的竞态条件 |
+| P2 | 错误处理 | 导致调用者程序崩溃的panic |
+| P2 | 依赖链 | 传递性漏洞暴露 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- File upload handlers (size limits, type validation)
-- Archive extraction logic (zip, tar, gzip)
-- Filename sanitization
-- External tool invocation for file processing
-- Temporary file management
-- Output file path construction
+**必须审计：**
+- 所有导出函数和方法（公开API表面）
+- 每个公开函数参数的输入验证
+- `unsafe` 包的使用
+- goroutine安全保证 vs 实际实现
+- panic vs 错误返回行为
+- 依赖及其漏洞状态
 
 ---
 
-## 9. Gateway / Proxy Service
+## 8. 文件处理服务
 
-**Typical stack:** net/http / reverse proxy + middleware chain
+**典型技术栈：** net/http + archive/zip / archive/tar + 图像处理
 
-### Priority Matrix
+### 优先级矩阵
 
-| Priority | Vulnerability Category | Reason |
-|----------|----------------------|--------|
-| P0 | SSRF | Core function involves making outbound requests |
-| P0 | Authentication Bypass | Gateway auth checks must cover all routes |
-| P0 | Header Injection | Forwarded headers manipulation |
-| P1 | Request Smuggling | HTTP parsing inconsistencies between proxy and backend |
-| P1 | Open Redirect | Routing based on user input |
-| P1 | Information Disclosure | Leaking backend topology, internal headers |
-| P2 | DoS | Slow-read attacks, connection exhaustion |
-| P2 | TLS Configuration | Weak cipher suites, certificate validation |
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | 路径穿越 / Zip Slip | 带构造文件名的压缩包提取 |
+| P0 | 命令注入 | 调用图像/文档处理器 |
+| P1 | 解压炸弹 | 压缩文件展开为巨大尺寸 |
+| P1 | 符号链接攻击 | Tar/zip条目为符号链接 |
+| P1 | 资源耗尽 | 处理大型或畸形文件 |
+| P2 | SSRF | 如果文件包含被获取的URL |
+| P2 | 内容类型混淆 | 文件扩展名与实际内容不匹配 |
 
-### Scope Definition
+### 范围定义
 
-**Must audit:**
-- Routing logic and URL rewriting rules
-- Header forwarding and sanitization (X-Forwarded-For, Host, etc.)
-- Authentication and authorization at the gateway level
-- Backend connection configuration (TLS, timeouts)
-- Rate limiting and circuit breaker implementation
-- WebSocket proxying (if applicable)
-- Error handling and upstream timeout behavior
+**必须审计：**
+- 文件上传处理器（大小限制、类型验证）
+- 压缩包提取逻辑（zip、tar、gzip）
+- 文件名净化
+- 文件处理的外部工具调用
+- 临时文件管理
+- 输出文件路径构建
+
+---
+
+## 9. 网关 / 代理服务
+
+**典型技术栈：** net/http / 反向代理 + 中间件链
+
+### 优先级矩阵
+
+| 优先级 | 漏洞类别 | 原因 |
+|--------|---------|------|
+| P0 | SSRF | 核心功能涉及发起出站请求 |
+| P0 | 认证绕过 | 网关认证检查必须覆盖所有路由 |
+| P0 | 头部注入 | 转发头部操纵 |
+| P1 | 请求走私 | 代理与后端间的HTTP解析不一致 |
+| P1 | 开放重定向 | 基于用户输入的路由 |
+| P1 | 信息泄露 | 泄露后端拓扑、内部头部 |
+| P2 | DoS | 慢速读取攻击、连接耗尽 |
+| P2 | TLS配置 | 弱密码套件、证书验证 |
+
+### 范围定义
+
+**必须审计：**
+- 路由逻辑和URL重写规则
+- 头部转发和净化（X-Forwarded-For、Host等）
+- 网关级别的认证和授权
+- 后端连接配置（TLS、超时）
+- 限流和熔断器实现
+- WebSocket代理（如适用）
+- 错误处理和上游超时行为

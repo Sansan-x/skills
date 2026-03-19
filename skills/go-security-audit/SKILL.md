@@ -1,455 +1,496 @@
 ---
 name: go-security-audit
-description: Comprehensive Go code security audit skill. Performs deep vulnerability analysis on Go projects including project background analysis, audit strategy design, vulnerability pattern matching, taint analysis with data flow tracking, false positive verification, vulnerability classification and rating, attack chain combination analysis, and detailed report generation. Use this skill whenever the user wants to audit Go code for security issues, find vulnerabilities in Go projects, perform Go security review, or analyze Go application security posture — even if they don't explicitly say "audit".
+description: 全面的Go代码安全审计技能。对Go项目进行深度漏洞分析，包括项目背景分析、审计策略设计、漏洞模式匹配、污点分析与数据流追踪、误报验证、漏洞分类评级、攻击链组合分析以及详细的中文审计报告生成。当用户需要审计Go代码安全问题、查找Go项目漏洞、进行Go安全审查或分析Go应用安全态势时使用此技能——即使用户没有明确说"审计"。
 ---
 
-# Go Security Audit
+# Go 代码安全审计
 
-A systematic, multi-phase security audit skill for Go codebases. This skill performs deep vulnerability analysis by combining project context understanding, pattern-based detection, data flow tracking, and attack chain analysis to produce actionable security findings with low false-positive rates.
+针对 Go 代码库的系统化、多阶段安全审计技能。通过结合项目上下文理解、模式检测、数据流追踪和攻击链分析，产出低误报率的可操作安全发现。
 
-## Workflow Overview
+## 工作流概览
 
-The audit proceeds through 8 phases in sequence. Each phase builds on the outputs of prior phases.
+审计按 8 个阶段顺序执行，每个阶段基于前序阶段的输出。
 
 ```
-Phase 1: Project Background Analysis
+阶段1: 项目背景分析
     ↓
-Phase 2: Mode Selection
+阶段2: 模式选择
     ↓
-Phase 3: Audit Strategy Design
+阶段3: 审计策略设计
     ↓
-Phase 4: Tool Execution (only if tool-integration mode)
+阶段4: 工具执行（仅工具集成模式）
     ↓
-Phase 5: LLM Code Audit (vulnerability discovery → data flow tracking → false positive verification)
+阶段5: LLM代码审计（漏洞发现 → 数据流追踪 → 误报验证）
     ↓
-Phase 6: Vulnerability Classification & Rating
+阶段6: 漏洞分类与评级
     ↓
-Phase 7: Attack Chain Combination Analysis
+阶段7: 攻击链组合分析
     ↓
-Phase 8: Audit Report Generation
+阶段8: 审计报告生成
 ```
 
 ---
 
-## Phase 1: Project Background Analysis
+## 阶段1：项目背景分析
 
-Before auditing any code, build a thorough understanding of the project. This context directly shapes the audit strategy in Phase 3.
+在审计任何代码之前，先全面了解项目。这些上下文信息将直接影响阶段3的审计策略。
 
-### 1.1 Identify Project Type
+### 1.1 识别项目类型
 
-Determine what kind of Go project this is:
+判断项目属于哪种类型：
 
-- **Web application / API service** (gin, echo, fiber, chi, net/http, gRPC)
-- **CLI tool** (cobra, urfave/cli)
-- **Microservice** (go-micro, go-kit, kratos)
-- **Blockchain / Smart contract** (cosmos-sdk, go-ethereum)
-- **Infrastructure / DevOps tool** (Kubernetes operator, Terraform provider)
-- **Library / SDK**
-- **Other** (describe)
+- **Web应用 / API服务**（gin、echo、fiber、chi、net/http、gRPC）
+- **命令行工具**（cobra、urfave/cli）
+- **微服务**（go-micro、go-kit、kratos）
+- **区块链 / 智能合约**（cosmos-sdk、go-ethereum）
+- **基础设施 / DevOps工具**（Kubernetes operator、Terraform provider）
+- **库 / SDK**
+- **其他**（描述）
 
-### 1.2 Analyze Technology Stack
+### 1.2 分析技术栈
 
-Scan the project to identify:
+扫描项目识别以下内容：
 
-- **Go version** — check `go.mod`
-- **Web framework** — gin, echo, fiber, chi, standard net/http, gRPC, etc.
-- **Database layer** — database/sql, gorm, ent, sqlx, sqlc, mongo-driver, etc.
-- **Authentication** — JWT (golang-jwt), OAuth2, session-based, API keys
-- **Serialization** — encoding/json, encoding/xml, protobuf, msgpack
-- **Template engine** — html/template, text/template, third-party
-- **External integrations** — cloud SDKs, message queues, Redis, etc.
-- **Cryptography** — crypto/\*, x/crypto, third-party crypto libs
-- **Dependency management** — go.mod dependencies, particularly known-vulnerable versions
+- **Go版本** — 查看 `go.mod`
+- **Web框架** — gin、echo、fiber、chi、标准 net/http、gRPC 等
+- **数据库层** — database/sql、gorm、ent、sqlx、sqlc、mongo-driver 等
+- **认证方式** — JWT（golang-jwt）、OAuth2、基于会话、API Key
+- **序列化** — encoding/json、encoding/xml、protobuf、msgpack
+- **模板引擎** — html/template、text/template、第三方
+- **外部集成** — 云SDK、消息队列、Redis 等
+- **密码学** — crypto/\*、x/crypto、第三方加密库
+- **依赖管理** — go.mod 依赖项，特别关注已知漏洞版本
 
-### 1.3 Map Key Modules and Business Logic
+### 1.3 梳理关键模块与业务逻辑
 
-Identify architectural boundaries and trust zones:
+识别架构边界和信任区域：
 
-- **Entry points** — HTTP handlers, gRPC methods, CLI commands, message consumers
-- **Authentication & authorization modules**
-- **Data access layer** — where queries are built and executed
-- **File handling** — upload, download, path construction
-- **External communication** — outgoing HTTP, DNS, SMTP, command execution
-- **Sensitive data processing** — PII, credentials, financial data, health data
-- **Configuration management** — env vars, config files, secrets handling
-- **Middleware chain** — CORS, rate limiting, logging, auth middleware
+- **入口点** — HTTP处理器、gRPC方法、CLI命令、消息消费者
+- **认证与授权模块**
+- **数据访问层** — 查询构建和执行的位置
+- **文件处理** — 上传、下载、路径构造
+- **外部通信** — 出站HTTP、DNS、SMTP、命令执行
+- **敏感数据处理** — PII、凭证、金融数据、健康数据
+- **配置管理** — 环境变量、配置文件、密钥管理
+- **中间件链** — CORS、限流、日志、认证中间件
 
-Output a structured summary of the project background for use in later phases.
-
----
-
-## Phase 2: Mode Selection
-
-Two dimensions of configuration control the audit behavior. Apply defaults unless the user explicitly specifies otherwise.
-
-### Audit Mode
-
-| Mode | Description | Default |
-|------|-------------|---------|
-| **Quick Scan** | Focuses on high-severity patterns (injection, auth bypass, RCE). Skips deep data flow tracking. Suitable for fast feedback. | |
-| **Deep Audit** | Full multi-pass analysis including taint tracking, false positive verification, and attack chain analysis. | ✅ Default |
-
-### Audit Method
-
-| Method | Description | Default |
-|--------|-------------|---------|
-| **Tool Integration** | Run external static analysis tools (gosec, staticcheck, semgrep) first, then use LLM for deeper analysis and false positive triage. | |
-| **Pure LLM Audit** | Rely entirely on LLM-based code review with pattern matching, data flow analysis, and reasoning. No external tools required. | ✅ Default |
-
-The default combination is **Deep Audit + Pure LLM Audit**. If the user requests a different combination, adjust accordingly.
+输出一份结构化的项目背景摘要，供后续阶段使用。
 
 ---
 
-## Phase 3: Audit Strategy Design
+## 阶段2：模式选择
 
-Based on Phase 1 (project context) and Phase 2 (mode selection), design a targeted audit strategy.
+两个维度的配置控制审计行为。除非用户明确指定，否则使用默认值。
 
-### 3.1 Determine Audit Priorities
+### 审计模式
 
-Map project characteristics to vulnerability categories. The strategy must reflect the actual technology stack and business domain — generic checklists are insufficient.
+| 模式 | 说明 | 默认 |
+|------|------|------|
+| **快速扫描** | 聚焦高危模式（注入、认证绕过、RCE），跳过深度数据流追踪，适合快速反馈 | |
+| **深度审计** | 完整多轮分析，包括污点追踪、误报验证和攻击链分析 | ✅ 默认 |
 
-**Priority mapping examples:**
+### 审计方式
 
-| Project Characteristic | High-Priority Vulnerability Categories |
+| 方式 | 说明 | 默认 |
+|------|------|------|
+| **工具集成** | 先运行外部静态分析工具（gosec、staticcheck、semgrep），再用LLM进行深度分析和误报筛选 | |
+| **纯LLM审计** | 完全依赖LLM的代码审查，包括模式匹配、数据流分析和推理，无需外部工具 | ✅ 默认 |
+
+默认组合为 **深度审计 + 纯LLM审计**。如果用户指定其他组合，按需调整。
+
+---
+
+## 阶段3：审计策略设计
+
+基于阶段1（项目上下文）和阶段2（模式选择），设计针对性的审计策略。
+
+加载审计策略模板：[references/audit-strategy-templates.md](./references/audit-strategy-templates.md)
+
+### 3.1 确定审计优先级
+
+将项目特征映射到漏洞类别。策略必须反映实际的技术栈和业务领域，通用检查清单远远不够。
+
+**优先级映射示例：**
+
+| 项目特征 | 高优先级漏洞类别 |
 |---|---|
-| Web API with user input | SQL injection, XSS, SSRF, path traversal, IDOR |
-| gRPC service | Protobuf deserialization, auth interceptor bypass, metadata injection |
-| File processing service | Path traversal, zip slip, symlink attacks, resource exhaustion |
-| Auth module | JWT validation flaws, timing attacks, privilege escalation, session fixation |
-| Crypto usage | Weak algorithms, hardcoded keys, IV reuse, improper random generation |
-| K8s operator | RBAC misconfiguration, privilege escalation, secret exposure |
-| CLI tool with exec | Command injection, argument injection, environment variable injection |
+| 带用户输入的Web API | SQL注入、XSS、SSRF、路径穿越、IDOR |
+| gRPC服务 | Protobuf反序列化、认证拦截器绕过、元数据注入 |
+| 文件处理服务 | 路径穿越、Zip Slip、符号链接攻击、资源耗尽 |
+| 认证模块 | JWT验证缺陷、计时攻击、权限提升、会话固定 |
+| 加密使用 | 弱算法、硬编码密钥、IV重用、不安全随机数 |
+| K8s operator | RBAC配置错误、权限提升、密钥泄露 |
+| 带exec的CLI工具 | 命令注入、参数注入、环境变量注入 |
 
-### 3.2 Define Scope and Coverage
+### 3.2 定义范围与覆盖
 
-Specify:
+确定：
 
-1. **Critical paths** — the code paths that handle sensitive operations (auth, payments, data access)
-2. **Trust boundaries** — where untrusted input enters and where it reaches sensitive sinks
-3. **Exclusions** — generated code, vendored dependencies (unless explicitly requested), test files
-4. **Depth** — for Quick Scan, limit to entry-point handlers and direct callees; for Deep Audit, trace full call chains
+1. **关键路径** — 处理敏感操作的代码路径（认证、支付、数据访问）
+2. **信任边界** — 不可信输入的进入点及其到达敏感sink的路径
+3. **排除项** — 生成代码、vendor依赖（除非明确要求）、测试文件
+4. **深度** — 快速扫描限于入口处理器和直接调用者；深度审计追踪完整调用链
 
-### 3.3 Design File Review Order
+### 3.3 设计文件审查顺序
 
-Prioritize files that sit on trust boundaries:
+优先审查位于信任边界上的文件：
 
-1. HTTP/gRPC handlers and route definitions
-2. Middleware (auth, validation, sanitization)
-3. Database query builders and data access objects
-4. File I/O and command execution logic
-5. Cryptographic operations
-6. Configuration and secret management
-7. Utility and helper functions used by the above
+1. HTTP/gRPC 处理器和路由定义
+2. 中间件（认证、校验、过滤）
+3. 数据库查询构建器和数据访问对象
+4. 文件I/O和命令执行逻辑
+5. 密码学操作
+6. 配置和密钥管理
+7. 上述模块使用的工具函数和辅助函数
 
-Output a written audit plan before proceeding to the next phase.
+在进入下一阶段前输出书面审计计划。
 
 ---
 
-## Phase 4: Tool Execution (Tool Integration Mode Only)
+## 阶段4：工具执行（仅工具集成模式）
 
-Skip this phase entirely if the audit method is Pure LLM Audit.
+如果审计方式为纯LLM审计，跳过此阶段。
 
-When tool integration is selected, run external tools and collect their findings as supplementary input for Phase 5.
+选择工具集成时，运行外部工具并收集发现作为阶段5的补充输入。
 
-### 4.1 Available Tools
+### 4.1 可用工具
 
-| Tool | Purpose | Install Command |
-|------|---------|----------------|
-| **gosec** | Go-specific security linter | `go install github.com/securego/gosec/v2/cmd/gosec@latest` |
-| **staticcheck** | Advanced Go static analysis | `go install honnef.co/go/tools/cmd/staticcheck@latest` |
-| **semgrep** | Pattern-based multi-language scanner | `pip install semgrep` or `brew install semgrep` |
-| **govulncheck** | Known vulnerability checker for Go deps | `go install golang.org/x/vuln/cmd/govulncheck@latest` |
+| 工具 | 用途 | 安装命令 |
+|------|------|----------|
+| **gosec** | Go专用安全检查 | `go install github.com/securego/gosec/v2/cmd/gosec@latest` |
+| **staticcheck** | 高级Go静态分析 | `go install honnef.co/go/tools/cmd/staticcheck@latest` |
+| **semgrep** | 基于模式的多语言扫描器 | `pip install semgrep` 或 `brew install semgrep` |
+| **govulncheck** | Go依赖已知漏洞检查 | `go install golang.org/x/vuln/cmd/govulncheck@latest` |
 
-### 4.2 Execution
+### 4.2 执行
 
-Run each available tool and capture output:
+运行每个可用工具并捕获输出：
 
 ```bash
-# gosec — security-specific patterns
 gosec -fmt json -out gosec-results.json ./...
-
-# staticcheck — broader static analysis
 staticcheck -f json ./... > staticcheck-results.json
-
-# govulncheck — known CVEs in dependencies
 govulncheck -json ./... > govulncheck-results.json
-
-# semgrep — custom and community Go rules
 semgrep --config "p/golang" --json -o semgrep-results.json .
 ```
 
-### 4.3 Result Normalization
+### 4.3 结果归一化
 
-Normalize tool outputs into a unified finding format for Phase 5 input:
+将工具输出统一为标准发现格式，作为阶段5输入：
 
 ```
-Finding:
-  tool: <tool name>
-  rule_id: <rule identifier>
-  severity: <high|medium|low>
-  file: <file path>
-  line: <line number>
-  message: <description>
-  code_snippet: <relevant code>
+发现:
+  工具: <工具名>
+  规则ID: <规则标识符>
+  严重程度: <高|中|低>
+  文件: <文件路径>
+  行号: <行号>
+  描述: <描述信息>
+  代码片段: <相关代码>
 ```
 
-Tool findings feed into Phase 5 as candidate vulnerabilities that the LLM audit will verify, enrich, or dismiss.
+工具发现作为候选漏洞输入阶段5，由LLM审计进行验证、丰富或排除。
 
 ---
 
-## Phase 5: LLM Code Audit
+## 阶段5：LLM代码审计
 
-This is the core analysis phase. It proceeds in three stages: vulnerability discovery, data flow tracking, and false positive verification.
+这是核心分析阶段，分三个步骤：漏洞发现、数据流追踪和误报验证。
 
-### 5.1 Load Vulnerability Pattern Library
+### 5.1 加载漏洞模式库
 
-Before starting code review, load the vulnerability pattern library from [references/vulnerability-patterns.md](./references/vulnerability-patterns.md).
+在开始代码审查前，加载漏洞模式库：[references/vulnerability-patterns.md](./references/vulnerability-patterns.md)
 
-This library contains Go-specific vulnerability patterns organized by category, each with:
-- Pattern description and risk level
-- Vulnerable code signatures (what to look for)
-- Sink functions and dangerous APIs
-- Common source-to-sink flows
-- Remediation guidance
+模式库包含按类别组织的Go专属漏洞模式，每个模式含：
+- 模式描述与风险等级
+- 漏洞代码特征（查找目标）
+- Sink函数和危险API
+- 常见 source → sink 数据流
+- 修复指南
 
-### 5.2 Vulnerability Discovery
+### 5.2 漏洞发现
 
-Systematically review code files in the order defined by the audit plan (Phase 3). For each file:
+按阶段3审计计划确定的文件顺序，系统性审查代码。对每个文件：
 
-1. **Pattern matching** — compare code against the vulnerability pattern library. Look for:
-   - Direct use of dangerous APIs (e.g., `fmt.Sprintf` in SQL queries, `os/exec` with user input)
-   - Missing input validation at trust boundaries
-   - Insecure default configurations
-   - Error handling that leaks sensitive information
-   - Race conditions in concurrent code
-   - Improper use of cryptographic primitives
+1. **模式匹配** — 将代码与漏洞模式库比对，查找：
+   - 直接使用危险API（如SQL查询中的 `fmt.Sprintf`、带用户输入的 `os/exec`）
+   - 信任边界处缺失输入校验
+   - 不安全的默认配置
+   - 泄露敏感信息的错误处理
+   - 并发代码中的竞态条件
+   - 密码学原语的不当使用
+   - Go语言特有攻击面（unsafe包滥用、reflect注入、cgo边界问题等）
 
-2. **Semantic analysis** — go beyond pattern matching to understand code intent:
-   - Is this input validation actually effective, or can it be bypassed?
-   - Does this authorization check cover all relevant paths?
-   - Are there implicit assumptions about data format or trust level?
+2. **语义分析** — 超越模式匹配，理解代码意图：
+   - 输入校验是否真正有效，能否被绕过？
+   - 授权检查是否覆盖所有相关路径？
+   - 是否存在关于数据格式或信任级别的隐含假设？
 
-3. **Record each finding** with:
-   - Vulnerability type (from pattern library category)
-   - Location (file, function, line range)
-   - Sink point (the dangerous operation)
-   - Suspected source (where untrusted data originates)
-   - Preliminary severity assessment
-   - Code snippet showing the issue
+3. **记录每个发现**，必须包含详细的漏洞代码片段：
+   - 漏洞类型（来自模式库分类）
+   - 位置（文件、函数、行范围）
+   - Sink点（危险操作）
+   - 疑似Source（不可信数据来源）
+   - 初步严重性评估
+   - **完整的漏洞代码片段**（包含上下文，不少于包含sink的完整函数体）
 
-For **Quick Scan mode**, stop here and proceed to Phase 6 (skip 5.3 and 5.4).
+**快速扫描模式**下，到此结束并进入阶段6（跳过5.3和5.4）。
 
-For **Deep Audit mode**, continue with data flow tracking and false positive verification.
+**深度审计模式**下，继续数据流追踪和误报验证。
 
-### 5.3 Data Flow Tracking (Taint Analysis)
+### 5.3 数据流追踪（污点分析）
 
-For each vulnerability found in 5.2, trace the data flow from source to sink to confirm exploitability.
+对5.2中发现的每个漏洞，从source到sink追踪数据流以确认可利用性。
 
-#### Step 1: Identify the Sink's Enclosing Function
+#### 步骤1：识别Sink所在函数
 
-Starting from the sink point (the vulnerable operation), identify the function that directly contains it.
+从sink点（漏洞操作）出发，识别直接包含它的函数。
 
-#### Step 2: Build the Call Chain
+#### 步骤2：构建调用链
 
-From the enclosing function, trace callers upward:
+从所在函数向上追踪调用者：
 
-1. Search the codebase for all call sites of the enclosing function
-2. For each caller, determine whether it passes user-controllable data to the parameter that reaches the sink
-3. Continue tracing upward until you reach an entry point (HTTP handler, gRPC method, CLI argument parser, etc.) or determine the data is not user-controllable
+1. 搜索代码库中所有对该函数的调用点
+2. 对每个调用者，判断其是否将用户可控数据传递给到达sink的参数
+3. 持续向上追踪，直到到达入口点（HTTP处理器、gRPC方法、CLI参数解析器等）或确认数据不可被用户控制
 
-Build a call chain like:
+#### 步骤3：污点传播分析
 
-```
-[Entry Point] handler.CreateUser()
-    → [Business Logic] service.ProcessUser(input)
-        → [Data Access] repo.SaveUser(query)
-            → [Sink] db.Exec(query)  ← SQL injection sink
-```
+沿每条调用链，追踪污染数据的变换：
 
-#### Step 3: Taint Propagation Analysis
+- **传播器（Propagator）** — 传递污点的函数（如 `strings.TrimSpace`、`fmt.Sprintf`、结构体字段赋值）
+- **净化器（Sanitizer）** — 消除污点的函数（如参数化查询、`html.EscapeString`、白名单校验）
+- **条件污点** — 污点是否流动取决于运行时条件的分支
 
-Along each call chain, track how the tainted data transforms:
+#### 结构化数据流输出格式
 
-- **Propagators** — functions that pass taint through (e.g., `strings.TrimSpace`, `fmt.Sprintf`, struct field assignment)
-- **Sanitizers** — functions that neutralize taint (e.g., parameterized queries, `html.EscapeString`, allowlist validation)
-- **Conditional taint** — branches where taint may or may not flow depending on runtime conditions
-
-Record the complete data flow path:
+每个漏洞的数据流追踪结果必须以如下结构化格式输出：
 
 ```
-Source: r.FormValue("username")  [HTTP request parameter]
-  → assigned to `input.Name`    [struct field propagation]
-  → passed to service.Process() [function argument propagation]
-  → concatenated into SQL via fmt.Sprintf()  [string propagation - NO sanitization]
-  → db.Exec(query)              [SINK: SQL execution]
+┌─────────────────────────────────────────────────────────┐
+│ 数据流追踪 #[编号]                                        │
+│ 漏洞类型: [类型]                                          │
+│ 漏洞ID: VULN-[ID]                                        │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│ ◆ Source（污点源）                                        │
+│   位置: [文件路径]:[行号] @ [函数名]                       │
+│   类型: [HTTP参数/请求体/URL路径/Cookie/Header/外部输入]   │
+│   表达式: [具体代码表达式]                                 │
+│                                                          │
+│ ◆ 传播路径                                               │
+│   ┌──────┬──────────────────┬──────────────┬───────────┐ │
+│   │ 序号 │ 位置              │ 操作          │ 污点状态  │ │
+│   ├──────┼──────────────────┼──────────────┼───────────┤ │
+│   │  1   │ file:line@func   │ 赋值/传参/... │ 传播/净化 │ │
+│   │  2   │ file:line@func   │ ...          │ ...       │ │
+│   │ ...  │ ...              │ ...          │ ...       │ │
+│   └──────┴──────────────────┴──────────────┴───────────┘ │
+│                                                          │
+│ ◆ Sink（汇聚点）                                         │
+│   位置: [文件路径]:[行号] @ [函数名]                       │
+│   危险操作: [具体API调用]                                  │
+│   表达式: [具体代码表达式]                                 │
+│                                                          │
+│ ◆ 净化检查                                               │
+│   已发现净化措施: [有/无]                                  │
+│   净化详情: [具体净化函数及位置] 或 [未发现有效净化]        │
+│   净化有效性: [有效（阻断污点）/ 无效（原因）/ 不适用]      │
+│                                                          │
+│ ◆ 结论                                                   │
+│   可达性: [可达/不可达/条件可达]                            │
+│   可利用性: [确认/可能/存疑/误报]                          │
+│   完整调用链:                                             │
+│   [入口] → [中间函数1] → [中间函数2] → ... → [Sink]       │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### 5.4 False Positive Verification
+### 5.4 误报验证
 
-For each vulnerability with a traced data flow, perform verification to eliminate false positives.
+对每个已追踪数据流的漏洞，执行验证以消除误报。
 
-#### Verification Checks
+#### 验证检查
 
-1. **Sanitization check** — Is there any validation or sanitization between source and sink?
-   - Input validation (regex, allowlist, type assertion)
-   - Parameterized queries or prepared statements
-   - Output encoding (HTML, URL, SQL escaping)
-   - Framework-level protections (e.g., ORM auto-escaping)
+1. **净化检查** — source和sink之间是否存在校验或净化？
+   - 输入校验（正则、白名单、类型断言）
+   - 参数化查询或预编译语句
+   - 输出编码（HTML、URL、SQL转义）
+   - 框架级防护（如ORM自动转义）
 
-2. **Reachability check** — Can the vulnerable path actually be reached?
-   - Is the endpoint publicly accessible or behind authentication?
-   - Are there middleware guards (rate limiting, WAF, input size limits)?
-   - Is the function dead code or only called in test contexts?
+2. **可达性检查** — 漏洞路径是否真的可达？
+   - 端点是公开访问还是需要认证？
+   - 是否有中间件保护（限流、WAF、输入大小限制）？
+   - 该函数是否为死代码或仅在测试中调用？
 
-3. **Exploitability assessment** — Even if reachable, is exploitation practical?
-   - Does the data format constrain the attack payload?
-   - Are there additional runtime protections (CSP headers, database permissions)?
-   - Would exploitation require chaining with another vulnerability?
+3. **可利用性评估** — 即使可达，利用是否实际可行？
+   - 数据格式是否限制攻击载荷？
+   - 是否有额外运行时防护（CSP头、数据库权限）？
+   - 利用是否需要与其他漏洞组合？
 
-#### Verdict for Each Finding
+#### 每个发现的判定
 
-After verification, assign a confidence level:
+验证后，分配置信度：
 
-- **Confirmed** — clear source-to-sink path with no effective sanitization; exploitable
-- **Likely** — path exists but exploitation depends on specific runtime conditions
-- **Suspicious** — potential issue but significant mitigating factors exist
-- **False Positive** — effective sanitization found, path unreachable, or non-exploitable; dismiss with explanation
+- **确认（Confirmed）** — source到sink路径清晰，无有效净化，可利用
+- **可能（Likely）** — 路径存在但利用取决于特定运行时条件
+- **存疑（Suspicious）** — 潜在问题但存在显著缓解因素
+- **误报（False Positive）** — 发现有效净化、路径不可达或不可利用；附说明排除
 
-Remove false positives from the final findings list. Retain "Suspicious" findings with a note about the uncertainty.
+从最终发现列表中移除误报。保留"存疑"发现并附注不确定性说明。
 
 ---
 
-## Phase 6: Vulnerability Classification & Rating
+## 阶段6：漏洞分类与评级
 
-Classify and rate each confirmed or likely vulnerability.
+对每个确认或可能的漏洞进行分类和评级。
 
-### 6.1 Classification
+### 6.1 分类
 
-Assign each vulnerability to a CWE category:
+将每个漏洞映射到CWE类别：
 
-| Category | Common CWE IDs |
+| 类别 | 常见CWE编号 |
 |---|---|
-| Injection | CWE-89 (SQL), CWE-78 (OS Command), CWE-79 (XSS), CWE-917 (Expression Language) |
-| Broken Authentication | CWE-287, CWE-384, CWE-613 |
-| Sensitive Data Exposure | CWE-200, CWE-312, CWE-319 |
-| Broken Access Control | CWE-862, CWE-863, CWE-639 |
-| Security Misconfiguration | CWE-16, CWE-1188 |
-| Cryptographic Failures | CWE-326, CWE-327, CWE-330 |
+| 注入 | CWE-89（SQL）、CWE-78（OS命令）、CWE-79（XSS）、CWE-917（表达式语言） |
+| 认证缺陷 | CWE-287、CWE-384、CWE-613 |
+| 敏感数据泄露 | CWE-200、CWE-312、CWE-319 |
+| 访问控制缺陷 | CWE-862、CWE-863、CWE-639 |
+| 安全配置错误 | CWE-16、CWE-1188 |
+| 密码学失败 | CWE-326、CWE-327、CWE-330 |
 | SSRF | CWE-918 |
-| Path Traversal | CWE-22 |
-| Race Condition | CWE-362 |
-| Deserialization | CWE-502 |
+| 路径穿越 | CWE-22 |
+| 竞态条件 | CWE-362 |
+| 反序列化 | CWE-502 |
 
-### 6.2 Severity Rating (CVSS-aligned)
+### 6.2 严重性评级（CVSS对齐）
 
-Rate each vulnerability considering:
+评估每个漏洞时考虑：
 
-| Factor | Assessment Criteria |
+| 因素 | 评估标准 |
 |---|---|
-| **Attack Vector** | Network / Adjacent / Local / Physical |
-| **Attack Complexity** | Low (trivially exploitable) / High (requires specific conditions) |
-| **Privileges Required** | None / Low / High |
-| **User Interaction** | None / Required |
-| **Impact: Confidentiality** | None / Low / High |
-| **Impact: Integrity** | None / Low / High |
-| **Impact: Availability** | None / Low / High |
+| **攻击向量** | 网络 / 相邻 / 本地 / 物理 |
+| **攻击复杂度** | 低（容易利用）/ 高（需要特定条件） |
+| **所需权限** | 无 / 低 / 高 |
+| **用户交互** | 无 / 需要 |
+| **机密性影响** | 无 / 低 / 高 |
+| **完整性影响** | 无 / 低 / 高 |
+| **可用性影响** | 无 / 低 / 高 |
 
-Assign a severity label:
+严重性标签：
 
-| Severity | CVSS Score Range | Description |
+| 严重性 | CVSS分数范围 | 说明 |
 |---|---|---|
-| **Critical** | 9.0 – 10.0 | Remote exploitation, no auth required, high impact |
-| **High** | 7.0 – 8.9 | Significant impact, moderate exploitation difficulty |
-| **Medium** | 4.0 – 6.9 | Limited impact or higher exploitation difficulty |
-| **Low** | 0.1 – 3.9 | Minimal impact, difficult to exploit |
-| **Informational** | 0.0 | Best practice recommendation, no direct security impact |
+| **严重（Critical）** | 9.0 – 10.0 | 远程利用，无需认证，高影响 |
+| **高危（High）** | 7.0 – 8.9 | 显著影响，中等利用难度 |
+| **中危（Medium）** | 4.0 – 6.9 | 有限影响或较高利用难度 |
+| **低危（Low）** | 0.1 – 3.9 | 最小影响，难以利用 |
+| **信息（Info）** | 0.0 | 最佳实践建议，无直接安全影响 |
 
 ---
 
-## Phase 7: Attack Chain Combination Analysis
+## 阶段7：攻击链组合分析
 
-Independent vulnerabilities can sometimes be combined into attack chains with greater overall impact than any single finding. This phase identifies such chains.
+独立漏洞有时可以组合成攻击链，产生超过单个漏洞的整体影响。此阶段识别这些链。
 
-### 7.1 Principles
+### 7.1 原则
 
-- **Causality required** — each step in the chain must produce a concrete output (data, access, state change) that enables the next step
-- **Continuity** — the chain must be executable end-to-end without gaps; if step N's output cannot actually feed into step N+1, the chain is invalid
-- **No speculation** — do not fabricate connections between unrelated vulnerabilities; every link must be grounded in the code and data flow evidence from Phase 5
-- **Practical exploitation** — the combined attack must represent a realistic scenario, not a theoretical worst-case
+- **因果关系必须** — 链中每一步必须产出具体结果（数据、权限、状态变更），使下一步成为可能
+- **连续性** — 链必须端到端可执行，无断裂；如果第N步的输出无法实际输入第N+1步，则链无效
+- **不臆想** — 不得在无关漏洞间捏造关联；每个环节必须有阶段5中代码和数据流证据支撑
+- **实际可利用** — 组合攻击必须代表现实场景，而非理论最坏情况
 
-### 7.2 Chain Construction Process
+### 7.2 链构建过程
 
-1. **Build a vulnerability adjacency map** — for each finding, list what an attacker gains by exploiting it (e.g., "read arbitrary files", "bypass auth for endpoint X", "execute SQL queries as db user Y")
-2. **Identify chain candidates** — look for pairs where one vulnerability's output enables another vulnerability's precondition:
-   - Information disclosure → enables targeted injection (e.g., leaked DB schema enables SQL injection)
-   - Auth bypass → enables access to endpoints with other vulnerabilities
-   - SSRF → enables access to internal services with weaker security
-   - Path traversal → enables reading config/secrets → enables privilege escalation
-3. **Validate each chain** — walk through the chain step-by-step, confirming that each transition is supported by actual code paths and data flows
-4. **Rate the combined impact** — the chain's severity is based on the final impact achievable, not the individual vulnerability severities
+1. **构建漏洞邻接图** — 对每个发现，列出攻击者利用后获得的能力（如"读取任意文件"、"绕过端点X的认证"、"以数据库用户Y执行SQL查询"）
+2. **识别链候选** — 寻找一个漏洞的输出能启用另一个漏洞前置条件的组合：
+   - 信息泄露 → 启用定向注入（如泄露的数据库schema启用SQL注入）
+   - 认证绕过 → 启用对含其他漏洞端点的访问
+   - SSRF → 启用对安全性较弱的内部服务的访问
+   - 路径穿越 → 读取配置/密钥 → 权限提升
+3. **验证每条链** — 逐步走查，确认每个过渡有实际代码路径和数据流支撑
+4. **评估组合影响** — 链的严重性基于最终可达影响，而非各漏洞严重性的简单叠加
 
-### 7.3 Output Format
+### 7.3 输出格式
 
-For each valid attack chain:
+对每条有效攻击链：
 
 ```
-Attack Chain: [descriptive name]
-Combined Severity: [Critical/High/Medium]
-Steps:
-  1. [Vulnerability A] → attacker gains [specific capability]
-  2. [Vulnerability B] (enabled by step 1) → attacker gains [escalated capability]
+攻击链: [描述性名称]
+组合严重性: [严重/高危/中危]
+步骤:
+  1. [漏洞A] → 攻击者获得 [具体能力]
+  2. [漏洞B]（由步骤1启用）→ 攻击者获得 [升级能力]
   3. ...
-Final Impact: [what the attacker ultimately achieves]
-Preconditions: [what the attacker needs before step 1]
+最终影响: [攻击者最终达成的目标]
+前置条件: [攻击者在步骤1前需要的条件]
 ```
 
-If no valid attack chains are found, explicitly state this — do not force combinations that don't hold up.
+如果未发现有效攻击链，明确说明——不要强行组合不成立的组合。
 
 ---
 
-## Phase 8: Audit Report Generation
+## 阶段8：审计报告生成
 
-Generate a comprehensive security audit report. Load the report template from [references/report-template.md](./references/report-template.md).
+生成全面的中文安全审计报告。加载报告模板：[references/report-template.md](./references/report-template.md)
 
-### Report Structure
+### 报告输出
 
-The report must include:
+报告输出到 `./reports/` 目录下，文件命名规则：
 
-1. **Executive Summary** — high-level findings, overall risk posture, key numbers (critical/high/medium/low counts)
-2. **Project Overview** — project background from Phase 1 (type, stack, architecture)
-3. **Audit Scope & Methodology** — what was audited, mode and method used, tools run (if any), files and modules covered
-4. **Findings Summary Table** — all findings sorted by severity, with ID, title, severity, CWE, location
-5. **Detailed Findings** — for each vulnerability:
-   - Title and ID
-   - Severity and CWE classification
-   - Location (file, function, line range)
-   - Description of the vulnerability
-   - Data flow path (source → propagation → sink) from Phase 5.3
-   - Proof of concept or exploitation scenario
-   - Remediation recommendation with code example
-6. **Attack Chain Analysis** — from Phase 7, if any chains were identified
-7. **Remediation Priority Matrix** — ordered list of fixes by impact-to-effort ratio
-8. **Appendices**
-   - Tool scan results (if tool integration was used)
-   - Full list of files reviewed
-   - False positives dismissed (with reasoning)
-   - Methodology notes
+```
+./reports/[项目名称]-goaudit-[YYYYMMDD-HHMM].md
+```
 
-### Report Quality Requirements
+例如：`./reports/myproject-goaudit-20260319-1430.md`
 
-- Every finding must include a concrete remediation with a Go code example showing the fix
-- Severity ratings must be justified, not just assigned
-- Data flow paths must be specific (file names, function names, line references), not abstract
-- The report should be actionable — a developer should be able to fix each issue using only the report
+在生成报告前，先创建 `./reports/` 目录（如果不存在）：
+
+```bash
+mkdir -p ./reports
+```
+
+项目名称从 `go.mod` 的 module 声明中提取（取最后一个路径段），如果不可用则使用项目根目录名。时间使用审计执行时的当前时间。
+
+### 报告结构
+
+报告必须包含：
+
+1. **执行摘要** — 高层发现、整体风险态势、关键数字（严重/高危/中危/低危计数）
+2. **项目概况** — 来自阶段1的项目背景（类型、技术栈、架构）
+3. **审计范围与方法** — 审计了什么、使用的模式和方式、运行的工具（如有）、覆盖的文件和模块
+4. **发现汇总表** — 所有发现按严重性排序，含ID、标题、严重性、CWE、位置
+5. **详细发现** — 对每个漏洞：
+   - 标题和ID
+   - 严重性和CWE分类
+   - 位置（文件、函数、行范围）
+   - 漏洞描述
+   - **漏洞代码片段**（完整展示含漏洞的函数或代码段，标注漏洞行）
+   - **结构化数据流路径**（使用阶段5.3定义的结构化格式）
+   - 利用场景或PoC
+   - 修复建议及Go代码示例
+6. **攻击链分析** — 来自阶段7（如有链被识别）
+7. **修复优先级矩阵** — 按影响/投入比排序的修复清单
+8. **附录**
+   - 工具扫描结果（如使用了工具集成）
+   - 审查文件完整列表
+   - 排除的误报（附理由）
+   - 方法论说明
+
+### 报告质量要求
+
+- 每个发现必须包含**完整的漏洞代码片段**（不少于包含sink的完整函数体），包括文件路径和行号
+- 每个发现必须包含**结构化数据流路径**（使用阶段5.3定义的表格格式），明确标注source、传播路径中的每个节点、以及sink
+- 每个发现必须包含具体的修复建议和Go代码示例（展示修复前后的代码对比）
+- 严重性评级必须有理由支撑，不能仅仅赋值
+- 报告应可操作——开发者仅凭报告即可修复每个问题
 
 ---
 
-## Reference Files
+## 参考文件
 
-Load these resources as needed during the audit:
+在审计过程中按需加载以下资源：
 
-- [Vulnerability Pattern Library](./references/vulnerability-patterns.md) — Go-specific vulnerability patterns organized by category. Load at the beginning of Phase 5.1. Contains sink functions, dangerous APIs, vulnerable code signatures, and remediation patterns for all major Go vulnerability categories.
+- [漏洞模式库](./references/vulnerability-patterns.md) — 按类别组织的Go专属漏洞模式。在阶段5.1开始时加载。包含sink函数、危险API、漏洞代码特征、Go语言特有攻击方法和修复模式。
 
-- [Audit Strategy Templates](./references/audit-strategy-templates.md) — Pre-built audit strategy templates for common Go project types. Load during Phase 3 to accelerate strategy design. Contains priority matrices and scope definitions for web APIs, microservices, CLI tools, and more.
+- [审计策略模板](./references/audit-strategy-templates.md) — 常见Go项目类型的预构建审计策略模板。在阶段3加载以加速策略设计。包含优先级矩阵和范围定义。
 
-- [Report Template](./references/report-template.md) — The structural template for the final audit report. Load at the beginning of Phase 8. Contains section headers, formatting guidelines, and example content for each report section.
+- [报告模板](./references/report-template.md) — 最终审计报告的结构模板。在阶段8开始时加载。包含章节标题、格式指南和各章节示例内容。
