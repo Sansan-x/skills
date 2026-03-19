@@ -171,17 +171,28 @@ python scripts/fetch_pr_diff.py --owner <owner> --repo <repo> --pr <PR编号>
 - **修复PR**：[GitHub PR URL]
 - **严重程度**：[评级]
 - **影响组件**：[组件名]
+- **影响版本**：[版本号]
 
 #### 漏洞分析
 [基于Issue Report的详细分析]
 
+#### 关键代码路径
+[**必填**。列出从入口到崩溃/漏洞触发点的完整调用链，包括文件名和行号（如Issue中有提供）。示例：]
+- 入口：`internal/pfcp/handler.go` → `HandlePfcpSessionReportRequest()`
+- 调用：`internal/context/pfcp_reports.go:29` → `SMContext.HandleReports()`
+- 崩溃点：`internal/context/pfcp_reports.go:77` → `identityTriggerType()` 中访问 `usarTrigger.Volth`
+- 注意：handler在goroutine中运行（`udp.go:71`），无panic recovery
+
 #### 漏洞代码
+[**必填**。展示触发漏洞的实际代码片段，标注来源文件路径。如代码来自Issue描述则标注，如来自PR diff则标注commit。如确实无法获取代码则标注"代码未获取，以下为基于Issue描述的等价重现"。]
 ```go
+// 来源：[文件路径] (Issue #xxx / PR #xxx / commit xxxx)
 [实际漏洞代码]
 ```
 
 #### 修复代码
 ```go
+// 来源：[PR链接 / commit hash]
 [实际修复代码]
 ```
 
