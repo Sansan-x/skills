@@ -17,7 +17,7 @@
 **严重性：** 严重
 **CWE：** CWE-843
 **置信度：** 中
-**来源：** security-guide (华为白盒测试指导)
+**来源：** security-guide 
 
 ### 漏洞描述
 
@@ -221,7 +221,7 @@ func DispatchAction(svc *AdminService, action string, args ...interface{}) (inte
 **严重性：** 中危
 **CWE：** CWE-129
 **置信度：** 高
-**来源：** security-guide (华为白盒测试指导)
+**来源：** security-guide 
 
 ### 漏洞描述
 
