@@ -198,9 +198,27 @@ semgrep --config "p/golang" --json -o semgrep-results.json .
 
 ### 5.1 加载漏洞模式库
 
-在开始代码审查前，加载漏洞模式库：[references/vulnerability-patterns.md](./references/vulnerability-patterns.md)
+在开始代码审查前，按以下优先级加载漏洞模式库。根据阶段3审计策略中确定的高优先级漏洞类别，按需加载对应的攻击模式，无需一次性加载全部模式。
 
-模式库包含按类别组织的Go专属漏洞模式，每个模式含：
+#### 优先级1：go-vuln-lib 漏洞模式库（优先加载）
+
+检查是否存在 `go-vuln-lib` skill 生成的漏洞模式库。该模式库的各攻击模式分别存储为独立文件，位于 `go-vuln-lib` skill 目录下的 `vuln-lib/patterns/` 路径中。
+
+**加载方式：**
+1. 定位 `go-vuln-lib` skill 目录（通常与本 skill 同级，即 `../go-vuln-lib/`）
+2. 检查 `go-vuln-lib/vuln-lib/patterns/` 目录是否存在
+3. 如果存在，列出 `patterns/` 目录下的所有模式文件
+4. 根据审计策略中的高优先级漏洞类别，按需加载对应的模式文件（如审计Web API时优先加载SQL注入、SSRF、认证相关的模式文件）
+
+#### 优先级2：内置漏洞模式库（备选）
+
+如果 `go-vuln-lib` skill 不存在或其 `vuln-lib/patterns/` 目录不可用，则加载本 skill 内置的漏洞模式库：[references/vulnerability-patterns.md](./references/vulnerability-patterns.md)
+
+同样按需加载——根据审计策略中的漏洞类别，定位到模式库中对应的章节进行加载，而非一次性加载整个文件。
+
+#### 模式库内容结构
+
+无论来源如何，每个漏洞模式应包含：
 - 模式描述与风险等级
 - 漏洞代码特征（查找目标）
 - Sink函数和危险API
@@ -507,7 +525,9 @@ mkdir -p ./reports
 
 在审计过程中按需加载以下资源：
 
-- [漏洞模式库](./references/vulnerability-patterns.md) — 按类别组织的Go专属漏洞模式。在阶段5.1开始时加载。包含sink函数、危险API、漏洞代码特征、Go语言特有攻击方法和修复模式。
+- **go-vuln-lib 漏洞模式库**（优先）— 由 `go-vuln-lib` skill 生成的漏洞模式库，各攻击模式独立存储在 `go-vuln-lib/vuln-lib/patterns/` 目录下。在阶段5.1按需加载对应的攻击模式文件。
+
+- [内置漏洞模式库](./references/vulnerability-patterns.md)（备选）— 当 `go-vuln-lib` skill 不可用时使用。按类别组织的Go专属漏洞模式，包含sink函数、危险API、漏洞代码特征、Go语言特有攻击方法和修复模式。
 
 - [审计策略模板](./references/audit-strategy-templates.md) — 常见Go项目类型的预构建审计策略模板。在阶段3加载以加速策略设计。包含优先级矩阵和范围定义。
 
