@@ -160,7 +160,7 @@ description: Go语言攻击模式库构建与管理技能。从多种来源（go
 pattern_id: "GO-ATK-[类别缩写]-[序号]"
 name: "模式名称"
 category: "漏洞类别"
-severity: "严重 | 高危 | 中危 | 低危"
+severity: "致命 | 严重 | 一般 | 提示"
 cwe_ids: ["CWE-XXX"]
 source_type: "vuln-insight | codehub-issue | security-guide | expert-case"
 source_ref: "来源引用"
