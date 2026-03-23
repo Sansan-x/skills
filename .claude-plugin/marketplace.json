@@ -50,6 +50,17 @@
       "skills": [
         "./skills/claude-api"
       ]
+    },
+    {
+      "name": "go-security-audit",
+      "description": "Go language security audit skills suite for vulnerability insight, attack pattern library management, and comprehensive code auditing with 5GC focus",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/go-vuln-insight",
+        "./skills/go-vuln-lib",
+        "./skills/go-audit"
+      ]
     }
   ]
 }
