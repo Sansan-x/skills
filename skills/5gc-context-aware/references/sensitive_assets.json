@@ -1,0 +1,87 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "Sensitive 5GC assets for AST-level tagging during code audit",
+    "spec_reference": "3GPP TS 33.501 - Security Architecture and Procedures for 5G System"
+  },
+  "subscriber_identity": {
+    "description": "Subscriber identification data that must be protected",
+    "sensitivity": "critical",
+    "variables": [
+      {"pattern": "(?i)supi", "description": "Subscription Permanent Identifier", "spec": "TS 23.003"},
+      {"pattern": "(?i)suci", "description": "Subscription Concealed Identifier", "spec": "TS 23.003"},
+      {"pattern": "(?i)imsi", "description": "International Mobile Subscriber Identity (legacy)", "spec": "TS 23.003"},
+      {"pattern": "(?i)guti|5g.?guti|tmsi", "description": "Globally Unique Temporary Identifier", "spec": "TS 23.003"},
+      {"pattern": "(?i)gpsi|msisdn", "description": "Generic Public Subscription Identifier", "spec": "TS 23.003"},
+      {"pattern": "(?i)pei|imei|imeisv", "description": "Permanent Equipment Identifier", "spec": "TS 23.003"},
+      {"pattern": "(?i)amf.?ue.?ngap.?id|ran.?ue.?ngap.?id", "description": "NGAP UE identifiers", "spec": "TS 38.413"}
+    ]
+  },
+  "cryptographic_keys": {
+    "description": "Cryptographic keys and security material",
+    "sensitivity": "critical",
+    "variables": [
+      {"pattern": "(?i)k.?nas.?enc", "description": "NAS encryption key", "spec": "TS 33.501 Annex A"},
+      {"pattern": "(?i)k.?nas.?int", "description": "NAS integrity key", "spec": "TS 33.501 Annex A"},
+      {"pattern": "(?i)k.?gnb|k.?n3iwf", "description": "Key for gNB/N3IWF", "spec": "TS 33.501 Annex A"},
+      {"pattern": "(?i)k.?amf", "description": "AMF key", "spec": "TS 33.501 Annex A"},
+      {"pattern": "(?i)k.?ausf", "description": "AUSF key", "spec": "TS 33.501 Annex A"},
+      {"pattern": "(?i)k.?seaf", "description": "SEAF key", "spec": "TS 33.501 Annex A"},
+      {"pattern": "(?i)k.?nh|nh.?key", "description": "Next Hop key for handover", "spec": "TS 33.501 Annex A"},
+      {"pattern": "(?i)permanent.?key|(?<![a-zA-Z])ki(?![a-zA-Z])|opc|(?<![a-zA-Z])op(?![a-zA-Z])", "description": "USIM permanent keys", "spec": "TS 33.102"},
+      {"pattern": "(?i)xres.?star|hxres.?star|xres|hxres", "description": "Authentication response values", "spec": "TS 33.501"},
+      {"pattern": "(?i)rand|autn|(?<![a-zA-Z])auts(?![a-zA-Z])", "description": "Authentication vector components", "spec": "TS 33.501"},
+      {"pattern": "(?i)ck.?prime|ik.?prime|ck'|ik'", "description": "Derived cipher/integrity keys", "spec": "TS 33.501"}
+    ]
+  },
+  "session_data": {
+    "description": "PDU session and tunnel endpoint data",
+    "sensitivity": "high",
+    "variables": [
+      {"pattern": "(?i)teid|tunnel.?endpoint", "description": "GTP Tunnel Endpoint Identifier", "spec": "TS 29.281"},
+      {"pattern": "(?i)f.?teid", "description": "Fully Qualified TEID", "spec": "TS 29.244"},
+      {"pattern": "(?i)pdu.?session.?id", "description": "PDU Session Identifier", "spec": "TS 24.501"},
+      {"pattern": "(?i)qfi|qos.?flow.?id", "description": "QoS Flow Identifier", "spec": "TS 23.501"},
+      {"pattern": "(?i)pdr.?id|far.?id|qer.?id|urr.?id|bar.?id", "description": "PFCP Rule Identifiers", "spec": "TS 29.244"},
+      {"pattern": "(?i)ue.?ip.?addr", "description": "UE IP Address", "spec": "TS 29.244"},
+      {"pattern": "(?i)dnn|apn", "description": "Data Network Name / Access Point Name", "spec": "TS 23.003"},
+      {"pattern": "(?i)s.?nssai|sst|sd(?![a-zA-Z])", "description": "Network Slice Selection Assistance Information", "spec": "TS 23.003"}
+    ]
+  },
+  "security_context": {
+    "description": "NAS and AS security context parameters",
+    "sensitivity": "critical",
+    "variables": [
+      {"pattern": "(?i)nas.?security.?context|security.?context", "description": "NAS Security Context", "spec": "TS 33.501"},
+      {"pattern": "(?i)nas.?count|ul.?count|dl.?count", "description": "NAS sequence counters (anti-replay)", "spec": "TS 33.501"},
+      {"pattern": "(?i)ngksi|ksi|key.?set.?identifier", "description": "Key Set Identifier", "spec": "TS 33.501"},
+      {"pattern": "(?i)ncc|next.?hop.?chaining", "description": "Next Hop Chaining Counter", "spec": "TS 33.501"},
+      {"pattern": "(?i)security.?capability|ue.?security.?cap", "description": "UE Security Capabilities", "spec": "TS 33.501"},
+      {"pattern": "(?i)integrity.?algo|cipher.?algo|ea[0-3]|ia[0-3]", "description": "Selected security algorithms", "spec": "TS 33.501"}
+    ]
+  },
+  "location_data": {
+    "description": "UE location and mobility information",
+    "sensitivity": "high",
+    "variables": [
+      {"pattern": "(?i)tai|tracking.?area", "description": "Tracking Area Identity", "spec": "TS 23.003"},
+      {"pattern": "(?i)cell.?id|nr.?cgi|ecgi", "description": "Cell/CGI Identifiers", "spec": "TS 23.003"},
+      {"pattern": "(?i)user.?location|ue.?location", "description": "UE Location Information", "spec": "TS 29.571"},
+      {"pattern": "(?i)plmn.?id|mcc|mnc", "description": "PLMN Identity (MCC/MNC)", "spec": "TS 23.003"},
+      {"pattern": "(?i)ran.?node.?id|gnb.?id", "description": "RAN Node/gNB Identifiers", "spec": "TS 38.413"}
+    ]
+  },
+  "struct_types": {
+    "description": "Key Go struct types in 5GC implementations that hold sensitive data",
+    "entries": [
+      {"pattern": "(?i)AmfUe|AMFUe", "description": "AMF UE context struct", "contains": ["SUPI", "GUTI", "SecurityContext"]},
+      {"pattern": "(?i)RanUe|RANUe", "description": "RAN UE context struct", "contains": ["AMF_UE_NGAP_ID", "RAN_UE_NGAP_ID"]},
+      {"pattern": "(?i)SmContext|SMContext", "description": "SM context struct", "contains": ["PDUSession", "TEID", "UE_IP"]},
+      {"pattern": "(?i)PfcpSession|PFCPSession", "description": "PFCP session struct", "contains": ["PDR", "FAR", "QER"]},
+      {"pattern": "(?i)UeContext|UEContext", "description": "Generic UE context", "contains": ["SUPI", "SecurityContext"]},
+      {"pattern": "(?i)AuthenticationCtx|AuthCtx", "description": "Authentication context", "contains": ["AV", "XRES", "Kausf"]},
+      {"pattern": "(?i)NfProfile|NFProfile", "description": "NF registration profile", "contains": ["nfInstanceId", "ipv4Addresses"]},
+      {"pattern": "(?i)SubscriberData|SubscriptionData", "description": "Subscriber data records", "contains": ["SUPI", "DNN", "S-NSSAI"]}
+    ]
+  }
+}

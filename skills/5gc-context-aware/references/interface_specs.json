@@ -1,0 +1,284 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "5GC interface specifications and SBI API path mappings for route identification",
+    "spec_reference": "3GPP TS 29.5xx series"
+  },
+  "sbi_api_paths": {
+    "namf-comm": {
+      "nf_type": "AMF",
+      "spec": "TS 29.518",
+      "base_path": "/namf-comm/v1",
+      "operations": {
+        "/ue-contexts/{ueContextId}": {
+          "methods": ["PUT", "DELETE"],
+          "description": "UE context creation/release via N14",
+          "security_critical": true,
+          "audit_notes": "Verify source AMF authentication and UE context ownership"
+        },
+        "/ue-contexts/{ueContextId}/assign-ebi": {
+          "methods": ["POST"],
+          "description": "EBI assignment",
+          "security_critical": false
+        },
+        "/ue-contexts/{ueContextId}/transfer": {
+          "methods": ["POST"],
+          "description": "UE context transfer (handover)",
+          "security_critical": true,
+          "audit_notes": "Check authorization of requesting AMF"
+        },
+        "/ue-contexts/{ueContextId}/n1-n2-messages": {
+          "methods": ["POST"],
+          "description": "N1/N2 message transfer",
+          "security_critical": true,
+          "audit_notes": "Validate N1/N2 message content and requester identity"
+        },
+        "/subscriptions": {
+          "methods": ["POST"],
+          "description": "Event subscription",
+          "security_critical": false
+        },
+        "/non-ue-n2-messages/transfer": {
+          "methods": ["POST"],
+          "description": "Non-UE N2 message transfer",
+          "security_critical": true
+        }
+      }
+    },
+    "nsmf-pdusession": {
+      "nf_type": "SMF",
+      "spec": "TS 29.502",
+      "base_path": "/nsmf-pdusession/v1",
+      "operations": {
+        "/sm-contexts": {
+          "methods": ["POST"],
+          "description": "SM context creation (PDU Session Establishment)",
+          "security_critical": true,
+          "audit_notes": "Verify subscriber authorization for DNN/S-NSSAI"
+        },
+        "/sm-contexts/{smContextRef}/modify": {
+          "methods": ["POST"],
+          "description": "SM context modification",
+          "security_critical": true,
+          "audit_notes": "Check context ownership and modification authorization"
+        },
+        "/sm-contexts/{smContextRef}/release": {
+          "methods": ["POST"],
+          "description": "SM context release",
+          "security_critical": true,
+          "audit_notes": "Verify requester authorized to release context"
+        },
+        "/pdu-sessions": {
+          "methods": ["POST"],
+          "description": "PDU session creation (via N9 forwarding)",
+          "security_critical": true
+        }
+      }
+    },
+    "nudm-sdm": {
+      "nf_type": "UDM",
+      "spec": "TS 29.503",
+      "base_path": "/nudm-sdm/v2",
+      "operations": {
+        "/{supi}": {
+          "methods": ["GET"],
+          "description": "Get subscriber data by SUPI",
+          "security_critical": true,
+          "audit_notes": "Verify requester NF is authorized to access SUPI data"
+        },
+        "/{supi}/am-data": {
+          "methods": ["GET"],
+          "description": "Access and mobility subscription data",
+          "security_critical": true
+        },
+        "/{supi}/sm-data": {
+          "methods": ["GET"],
+          "description": "Session management subscription data",
+          "security_critical": true
+        },
+        "/{supi}/nssai": {
+          "methods": ["GET"],
+          "description": "Subscribed S-NSSAIs",
+          "security_critical": false
+        }
+      }
+    },
+    "nudm-uecm": {
+      "nf_type": "UDM",
+      "spec": "TS 29.503",
+      "base_path": "/nudm-uecm/v1",
+      "operations": {
+        "/{ueId}/registrations/amf-3gpp-access": {
+          "methods": ["PUT"],
+          "description": "AMF registration",
+          "security_critical": true,
+          "audit_notes": "Verify AMF identity before accepting registration"
+        },
+        "/{ueId}/registrations/smf-registrations/{pduSessionId}": {
+          "methods": ["PUT"],
+          "description": "SMF registration",
+          "security_critical": true
+        }
+      }
+    },
+    "nausf-auth": {
+      "nf_type": "AUSF",
+      "spec": "TS 29.509",
+      "base_path": "/nausf-auth/v1",
+      "operations": {
+        "/ue-authentications": {
+          "methods": ["POST"],
+          "description": "Initiate authentication (5G-AKA or EAP-AKA')",
+          "security_critical": true,
+          "audit_notes": "Core authentication entry point - verify full auth flow"
+        },
+        "/ue-authentications/{authCtxId}/5g-aka-confirmation": {
+          "methods": ["PUT"],
+          "description": "5G AKA confirmation (RES* verification)",
+          "security_critical": true,
+          "audit_notes": "Verify RES* comparison is constant-time to prevent timing attacks"
+        },
+        "/ue-authentications/{authCtxId}/eap-session": {
+          "methods": ["POST"],
+          "description": "EAP session message exchange",
+          "security_critical": true,
+          "audit_notes": "Verify EAP state machine enforces proper sequencing"
+        }
+      }
+    },
+    "nnrf-nfm": {
+      "nf_type": "NRF",
+      "spec": "TS 29.510",
+      "base_path": "/nnrf-nfm/v1",
+      "operations": {
+        "/nf-instances/{nfInstanceID}": {
+          "methods": ["PUT", "PATCH", "DELETE", "GET"],
+          "description": "NF instance registration/update/deregistration",
+          "security_critical": true,
+          "audit_notes": "Verify NF identity matches TLS certificate; prevent profile spoofing"
+        },
+        "/subscriptions": {
+          "methods": ["POST"],
+          "description": "NF status change subscription",
+          "security_critical": false
+        }
+      }
+    },
+    "nnrf-disc": {
+      "nf_type": "NRF",
+      "spec": "TS 29.510",
+      "base_path": "/nnrf-disc/v1",
+      "operations": {
+        "/nf-instances": {
+          "methods": ["GET"],
+          "description": "NF discovery",
+          "security_critical": true,
+          "audit_notes": "Verify discovery results are scoped to requester authorization"
+        }
+      }
+    },
+    "npcf-smpolicycontrol": {
+      "nf_type": "PCF",
+      "spec": "TS 29.512",
+      "base_path": "/npcf-smpolicycontrol/v1",
+      "operations": {
+        "/sm-policies": {
+          "methods": ["POST"],
+          "description": "SM policy creation",
+          "security_critical": true,
+          "audit_notes": "Verify requester is authorized SMF and subscriber context is valid"
+        },
+        "/sm-policies/{smPolicyId}/update": {
+          "methods": ["POST"],
+          "description": "SM policy update",
+          "security_critical": true
+        },
+        "/sm-policies/{smPolicyId}/delete": {
+          "methods": ["POST"],
+          "description": "SM policy deletion",
+          "security_critical": true
+        }
+      }
+    }
+  },
+  "binary_protocol_handlers": {
+    "NGAP": {
+      "spec": "TS 38.413",
+      "encoding": "ASN.1 APER",
+      "go_packages": ["ngap", "aper", "ngap_message"],
+      "critical_procedures": [
+        {"name": "InitialUEMessage", "security": "Contains NAS-PDU, potentially unprotected"},
+        {"name": "DownlinkNASTransport", "security": "Carries NAS messages to UE"},
+        {"name": "UplinkNASTransport", "security": "Carries NAS messages from UE"},
+        {"name": "HandoverRequired", "security": "Initiates handover, verify source cell"},
+        {"name": "HandoverRequest", "security": "Target AMF handover, verify security context transfer"},
+        {"name": "PathSwitchRequest", "security": "Xn handover completion, verify source"},
+        {"name": "NGSetupRequest", "security": "RAN node registration, validate identity"},
+        {"name": "UEContextReleaseCommand", "security": "UE context teardown"},
+        {"name": "InitialContextSetupRequest", "security": "Sends security keys to gNB"}
+      ]
+    },
+    "NAS-5G": {
+      "spec": "TS 24.501",
+      "encoding": "Custom binary (TLV)",
+      "go_packages": ["nas", "nasMessage", "nasType", "nas_security"],
+      "critical_procedures": [
+        {"name": "RegistrationRequest", "security": "May contain plain SUCI, initial message"},
+        {"name": "AuthenticationResponse", "security": "Contains RES* for verification"},
+        {"name": "SecurityModeComplete", "security": "Confirms security algorithms"},
+        {"name": "DeregistrationRequest", "security": "Must be integrity protected"},
+        {"name": "ServiceRequest", "security": "Must be integrity protected"},
+        {"name": "PDUSessionEstablishmentRequest", "security": "Triggers session creation"},
+        {"name": "IdentityResponse", "security": "May reveal SUPI if not concealed"}
+      ]
+    },
+    "PFCP": {
+      "spec": "TS 29.244",
+      "encoding": "Custom binary (TLV)",
+      "go_packages": ["pfcp", "pfcpType", "pfcp_message"],
+      "critical_procedures": [
+        {"name": "AssociationSetupRequest", "security": "SMF-UPF association, validate identity"},
+        {"name": "SessionEstablishmentRequest", "security": "Creates forwarding rules"},
+        {"name": "SessionModificationRequest", "security": "Modifies forwarding rules"},
+        {"name": "SessionDeletionRequest", "security": "Removes session rules"},
+        {"name": "HeartbeatRequest", "security": "Keepalive, check association state"}
+      ]
+    },
+    "GTP-U": {
+      "spec": "TS 29.281",
+      "encoding": "Custom binary",
+      "go_packages": ["gtp", "gtpv1", "gtpv1u"],
+      "critical_procedures": [
+        {"name": "T-PDU", "security": "User data packet, validate TEID"},
+        {"name": "EchoRequest", "security": "Path management"},
+        {"name": "ErrorIndication", "security": "May cause session teardown"}
+      ]
+    }
+  },
+  "router_patterns": {
+    "gin": {
+      "framework": "github.com/gin-gonic/gin",
+      "route_registration": ["router.GET", "router.POST", "router.PUT", "router.PATCH", "router.DELETE", "router.Group", "router.Handle"],
+      "middleware_pattern": ["router.Use", "group.Use"],
+      "auth_middleware_hints": ["AuthMiddleware", "TokenValidation", "OAuth", "JWTAuth"]
+    },
+    "echo": {
+      "framework": "github.com/labstack/echo",
+      "route_registration": ["e.GET", "e.POST", "e.PUT", "e.PATCH", "e.DELETE", "e.Group", "e.Add"],
+      "middleware_pattern": ["e.Use", "g.Use"],
+      "auth_middleware_hints": ["middleware.JWT", "AuthMiddleware", "TokenValidator"]
+    },
+    "gorilla_mux": {
+      "framework": "github.com/gorilla/mux",
+      "route_registration": ["router.HandleFunc", "router.Handle", "router.PathPrefix", "router.Methods"],
+      "middleware_pattern": ["router.Use"],
+      "auth_middleware_hints": ["AuthHandler", "TokenCheck"]
+    },
+    "net_http": {
+      "framework": "net/http",
+      "route_registration": ["http.HandleFunc", "http.Handle", "mux.HandleFunc", "mux.Handle"],
+      "middleware_pattern": ["http.Handler"],
+      "auth_middleware_hints": ["authMiddleware", "checkToken"]
+    }
+  }
+}

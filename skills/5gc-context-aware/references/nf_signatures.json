@@ -1,0 +1,240 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "Network Function identification signatures for 5GC service profiling",
+    "spec_reference": "3GPP TS 23.501 - System Architecture for the 5G System"
+  },
+  "nf_types": {
+    "AMF": {
+      "full_name": "Access and Mobility Management Function",
+      "go_module_patterns": [
+        "free5gc/amf", "open5gs.*amf", "magma.*amf",
+        "amf-server", "amf_service", "namf"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "AMF"},
+        {"field": "amfName", "value": "*"},
+        {"field": "ngapIpList", "value": "*"},
+        {"field": "sctpConfig", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "AMF\\.Start", "amf\\.Initialize", "NewAMFApp",
+        "amfContext\\.Init", "RunAMF"
+      ],
+      "key_imports": [
+        "ngap", "nas", "sctp", "amf_context",
+        "namf-comm", "namf-evts", "namf-callback"
+      ],
+      "sbi_service_names": [
+        "namf-comm", "namf-evts", "namf-loc", "namf-mt", "namf-oam"
+      ],
+      "interfaces": ["N1", "N2", "N8", "N11", "N12", "N14", "N15", "N22"],
+      "protocols": ["NGAP", "NAS-5G", "HTTP/2", "SCTP"]
+    },
+    "SMF": {
+      "full_name": "Session Management Function",
+      "go_module_patterns": [
+        "free5gc/smf", "open5gs.*smf", "magma.*smf",
+        "smf-server", "smf_service", "nsmf"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "SMF"},
+        {"field": "smfName", "value": "*"},
+        {"field": "pfcpAddr", "value": "*"},
+        {"field": "userPlaneInformation", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "SMF\\.Start", "smf\\.Initialize", "NewSMFApp",
+        "smfContext\\.Init", "RunSMF"
+      ],
+      "key_imports": [
+        "pfcp", "pdu_session", "smf_context",
+        "nsmf-pdusession", "nsmf-event-exposure"
+      ],
+      "sbi_service_names": [
+        "nsmf-pdusession", "nsmf-event-exposure", "nsmf-oam"
+      ],
+      "interfaces": ["N4", "N7", "N10", "N11", "N16"],
+      "protocols": ["PFCP", "HTTP/2", "GTP-U"]
+    },
+    "UPF": {
+      "full_name": "User Plane Function",
+      "go_module_patterns": [
+        "free5gc/upf", "open5gs.*upf", "magma.*upf",
+        "upf-server", "upf_service", "go-upf"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "UPF"},
+        {"field": "pfcpAddr", "value": "*"},
+        {"field": "gtpAddr", "value": "*"},
+        {"field": "dnn", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "UPF\\.Start", "upf\\.Initialize", "NewUPFApp",
+        "upfContext\\.Init", "RunUPF"
+      ],
+      "key_imports": [
+        "pfcp", "gtp", "upf_context", "forwarding",
+        "pdr", "far", "qer", "urr"
+      ],
+      "sbi_service_names": [],
+      "interfaces": ["N3", "N4", "N6", "N9"],
+      "protocols": ["PFCP", "GTP-U"]
+    },
+    "NRF": {
+      "full_name": "Network Repository Function",
+      "go_module_patterns": [
+        "free5gc/nrf", "open5gs.*nrf", "nrf-server", "nrf_service", "nnrf"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "NRF"},
+        {"field": "nrfName", "value": "*"},
+        {"field": "DefaultServiceIP", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "NRF\\.Start", "nrf\\.Initialize", "NewNRFApp", "RunNRF"
+      ],
+      "key_imports": [
+        "nrf_context", "nnrf-nfm", "nnrf-disc", "nf_profile"
+      ],
+      "sbi_service_names": [
+        "nnrf-nfm", "nnrf-disc"
+      ],
+      "interfaces": ["N27"],
+      "protocols": ["HTTP/2"]
+    },
+    "AUSF": {
+      "full_name": "Authentication Server Function",
+      "go_module_patterns": [
+        "free5gc/ausf", "open5gs.*ausf", "ausf-server", "ausf_service", "nausf"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "AUSF"},
+        {"field": "ausfName", "value": "*"},
+        {"field": "groupId", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "AUSF\\.Start", "ausf\\.Initialize", "NewAUSFApp", "RunAUSF"
+      ],
+      "key_imports": [
+        "ausf_context", "nausf-auth", "ue_authentication",
+        "5g-aka", "eap-aka"
+      ],
+      "sbi_service_names": [
+        "nausf-auth", "nausf-sorprotection", "nausf-upuprotection"
+      ],
+      "interfaces": ["N12", "N13"],
+      "protocols": ["HTTP/2"]
+    },
+    "UDM": {
+      "full_name": "Unified Data Management",
+      "go_module_patterns": [
+        "free5gc/udm", "open5gs.*udm", "udm-server", "udm_service", "nudm"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "UDM"},
+        {"field": "udmName", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "UDM\\.Start", "udm\\.Initialize", "NewUDMApp", "RunUDM"
+      ],
+      "key_imports": [
+        "udm_context", "nudm-sdm", "nudm-uecm", "nudm-ueau",
+        "subscriber_data", "authentication_data"
+      ],
+      "sbi_service_names": [
+        "nudm-sdm", "nudm-uecm", "nudm-ueau", "nudm-pp", "nudm-ee"
+      ],
+      "interfaces": ["N8", "N10", "N13"],
+      "protocols": ["HTTP/2"]
+    },
+    "UDR": {
+      "full_name": "Unified Data Repository",
+      "go_module_patterns": [
+        "free5gc/udr", "open5gs.*udr", "udr-server", "udr_service", "nudr"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "UDR"},
+        {"field": "udrName", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "UDR\\.Start", "udr\\.Initialize", "NewUDRApp", "RunUDR"
+      ],
+      "key_imports": [
+        "udr_context", "nudr-dr", "datarepository"
+      ],
+      "sbi_service_names": [
+        "nudr-dr", "nudr-group-id-map"
+      ],
+      "interfaces": ["N35", "N36"],
+      "protocols": ["HTTP/2"]
+    },
+    "PCF": {
+      "full_name": "Policy Control Function",
+      "go_module_patterns": [
+        "free5gc/pcf", "open5gs.*pcf", "pcf-server", "pcf_service", "npcf"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "PCF"},
+        {"field": "pcfName", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "PCF\\.Start", "pcf\\.Initialize", "NewPCFApp", "RunPCF"
+      ],
+      "key_imports": [
+        "pcf_context", "npcf-smpolicycontrol", "npcf-am-policy",
+        "npcf-bdtpolicycontrol", "policy_authorization"
+      ],
+      "sbi_service_names": [
+        "npcf-smpolicycontrol", "npcf-am-policy",
+        "npcf-bdtpolicycontrol", "npcf-policyauthorization",
+        "npcf-eventexposure"
+      ],
+      "interfaces": ["N7", "N15"],
+      "protocols": ["HTTP/2"]
+    },
+    "NSSF": {
+      "full_name": "Network Slice Selection Function",
+      "go_module_patterns": [
+        "free5gc/nssf", "open5gs.*nssf", "nssf-server", "nssf_service", "nnssf"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "NSSF"},
+        {"field": "nssfName", "value": "*"},
+        {"field": "supportedNssaiInPlmn", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "NSSF\\.Start", "nssf\\.Initialize", "NewNSSFApp", "RunNSSF"
+      ],
+      "key_imports": [
+        "nssf_context", "nnssf-nsselection", "nnssf-nssaiavailability"
+      ],
+      "sbi_service_names": [
+        "nnssf-nsselection", "nnssf-nssaiavailability"
+      ],
+      "interfaces": ["N22"],
+      "protocols": ["HTTP/2"]
+    },
+    "NEF": {
+      "full_name": "Network Exposure Function",
+      "go_module_patterns": [
+        "free5gc/nef", "open5gs.*nef", "nef-server", "nef_service"
+      ],
+      "config_identifiers": [
+        {"field": "nfType", "value": "NEF"},
+        {"field": "nefName", "value": "*"}
+      ],
+      "init_function_patterns": [
+        "NEF\\.Start", "nef\\.Initialize", "NewNEFApp", "RunNEF"
+      ],
+      "key_imports": [
+        "nef_context", "traffic_influence", "monitoring_event"
+      ],
+      "sbi_service_names": [
+        "nnef-pfdmanagement", "nnef-eventexposure"
+      ],
+      "interfaces": ["N29", "N33"],
+      "protocols": ["HTTP/2"]
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "audit_manifest": {
+    "version": "1.0.0",
+    "generated_at": "2026-03-23T10:00:00Z",
+    "analysis_time_seconds": 3.45,
+    "project_dir": "/path/to/free5gc/NFs/amf",
+
+    "service_profile": {
+      "nf_type": "AMF",
+      "full_name": "Access and Mobility Management Function",
+      "confidence": 95.2,
+      "go_module": "github.com/free5gc/amf",
+      "interfaces": ["N1", "N2", "N8", "N11", "N12", "N14", "N15", "N22"],
+      "protocols": ["NGAP", "NAS-5G", "HTTP/2", "SCTP"],
+      "sbi_services": ["namf-comm", "namf-evts", "namf-loc", "namf-mt", "namf-oam"]
+    },
+
+    "interface_map": {
+      "http_framework": {"framework": "gin", "evidence": "found in go.mod: github.com/gin-gonic/gin"},
+      "sbi_route_count": 24,
+      "security_critical_routes": 8,
+      "protocol_handler_counts": {"NGAP": 15, "NAS": 22, "PFCP": 0, "GTP-U": 0},
+      "auth_middleware_count": 2,
+      "coverage_warnings": [
+        {
+          "severity": "high",
+          "type": "unprotected_critical_route",
+          "message": "Security-critical route /namf-comm/v1/ue-contexts/:ueContextId may lack auth middleware"
+        }
+      ]
+    },
+
+    "sensitive_assets": {
+      "total_tagged": 156,
+      "files_scanned": 89,
+      "category_summary": {
+        "subscriber_identity": {"critical": 34},
+        "cryptographic_keys": {"critical": 28},
+        "session_data": {"high": 45},
+        "security_context": {"critical": 22},
+        "location_data": {"high": 18}
+      },
+      "top_hotspots": [
+        {"file": "internal/context/amf_ue.go", "tag_count": 42, "categories": ["subscriber_identity", "cryptographic_keys", "security_context"]},
+        {"file": "internal/nas/handler.go", "tag_count": 28, "categories": ["subscriber_identity", "security_context"]},
+        {"file": "internal/ngap/handler.go", "tag_count": 19, "categories": ["session_data", "location_data"]}
+      ]
+    },
+
+    "compliance": {
+      "summary": {
+        "total_checks": 23,
+        "controls_present": 18,
+        "controls_not_found": 5,
+        "compliance_rate": 78.3,
+        "critical_gaps": 2
+      },
+      "critical_gaps": [
+        {"check_id": "NAS-002", "requirement": "NAS NULL integrity protection (NIA0) shall only be used before security is activated", "category": "nas_security"},
+        {"check_id": "SBI-002", "requirement": "OAuth 2.0 based authorization shall be supported for NF service access", "category": "sbi_security"}
+      ]
+    },
+
+    "audit_priority_queue": [
+      {
+        "priority": 1,
+        "type": "compliance_gap",
+        "description": "[CRITICAL] Missing: NAS NULL integrity protection (NIA0) shall only be used before security is activated",
+        "check_id": "NAS-002",
+        "action": "Verify if NIA0 usage is properly restricted to pre-security-activation phase"
+      },
+      {
+        "priority": 1,
+        "type": "compliance_gap",
+        "description": "[CRITICAL] Missing: OAuth 2.0 based authorization shall be supported for NF service access",
+        "check_id": "SBI-002",
+        "action": "Verify if OAuth2 token validation is implemented elsewhere or truly missing"
+      },
+      {
+        "priority": 2,
+        "type": "attack_pattern",
+        "description": "[CRITICAL] NAS Security Mode Command Bypass",
+        "pattern_id": "AMF-001",
+        "cwe": ["CWE-287", "CWE-757"],
+        "action": "Verify NAS message handlers check security context is established before processing protected messages"
+      },
+      {
+        "priority": 2,
+        "type": "attack_pattern",
+        "description": "[CRITICAL] SUCI Concealment Bypass",
+        "pattern_id": "AMF-003",
+        "cwe": ["CWE-311", "CWE-327"],
+        "action": "Verify SUCI-to-SUPI resolution enforces encryption scheme and rejects null-scheme in production"
+      },
+      {
+        "priority": 3,
+        "type": "entry_point_review",
+        "description": "Review entry point: NAS handler: RegistrationRequest",
+        "target": "internal/nas/handler.go:45",
+        "action": "Perform taint analysis from this entry point"
+      }
+    ]
+  }
+}

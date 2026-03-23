@@ -1,0 +1,301 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "5GC NF-specific attack patterns and vulnerability categories for directed code audit",
+    "spec_reference": "3GPP TS 33.501, ENISA 5G Security, GSMA FS.40"
+  },
+  "common_patterns": [
+    {
+      "id": "COM-001",
+      "name": "Insufficient Input Validation on NAS/NGAP Messages",
+      "severity": "critical",
+      "description": "Binary protocol messages (NAS, NGAP, PFCP) parsed without proper length/bounds checking can lead to buffer overflows or panics",
+      "cwe": ["CWE-120", "CWE-125", "CWE-787"],
+      "detection_hints": ["aper.Unmarshal", "nas.Decode", "pfcp.Decode", "binary.Read", "bytes.NewBuffer"],
+      "audit_focus": "Check all Unmarshal/Decode calls for error handling and length validation before accessing decoded fields"
+    },
+    {
+      "id": "COM-002",
+      "name": "Missing Authentication on SBI Endpoints",
+      "severity": "critical",
+      "description": "HTTP/2 SBI endpoints exposed without OAuth2 token verification or mutual TLS validation",
+      "cwe": ["CWE-306", "CWE-862"],
+      "detection_hints": ["gin.Default()", "router.Group", "HandleFunc", "NoAuth", "skipAuth"],
+      "audit_focus": "Verify every SBI route group has middleware enforcing access token validation per TS 33.501 Section 13.3"
+    },
+    {
+      "id": "COM-003",
+      "name": "Sensitive Data Exposure in Logs",
+      "severity": "high",
+      "description": "SUPI, IMSI, authentication vectors, or encryption keys logged in plaintext",
+      "cwe": ["CWE-532", "CWE-200"],
+      "detection_hints": ["log.Info", "log.Debug", "log.Trace", "fmt.Printf", "logger.Sugar()"],
+      "audit_focus": "Search for logging statements that include SUPI, IMSI, SUCI, keys, or authentication vectors"
+    },
+    {
+      "id": "COM-004",
+      "name": "Race Condition in UE Context Access",
+      "severity": "high",
+      "description": "Concurrent access to UE context structures without proper synchronization",
+      "cwe": ["CWE-362", "CWE-667"],
+      "detection_hints": ["sync.RWMutex", "context.Store", "RanUe", "AmfUe", "SmfUe"],
+      "audit_focus": "Check if UE context load/store operations use proper mutex locking, especially in NGAP/NAS handler goroutines"
+    },
+    {
+      "id": "COM-005",
+      "name": "Insecure TLS Configuration",
+      "severity": "high",
+      "description": "SBI endpoints using weak TLS versions, cipher suites, or disabled certificate verification",
+      "cwe": ["CWE-326", "CWE-295"],
+      "detection_hints": ["tls.Config", "InsecureSkipVerify", "MinVersion", "CipherSuites"],
+      "audit_focus": "Verify TLS 1.2+ minimum, strong cipher suites, and no InsecureSkipVerify in production paths"
+    },
+    {
+      "id": "COM-006",
+      "name": "Integer Overflow in Protocol Length Fields",
+      "severity": "high",
+      "description": "Length fields in protocol messages used for memory allocation without overflow checks",
+      "cwe": ["CWE-190", "CWE-680"],
+      "detection_hints": ["make([]byte", "make([]uint8", "int(length)", "uint16(", "uint32("],
+      "audit_focus": "Verify all length-based allocations from protocol messages are bounds-checked"
+    },
+    {
+      "id": "COM-007",
+      "name": "Denial of Service via Resource Exhaustion",
+      "severity": "high",
+      "description": "Unbounded goroutine spawning, channel fills, or memory allocation based on untrusted input",
+      "cwe": ["CWE-400", "CWE-770"],
+      "detection_hints": ["go func()", "make(chan", "append(", "NewTicker", "time.After"],
+      "audit_focus": "Check for rate limiting, connection limits, and bounded resource allocation in message handlers"
+    }
+  ],
+  "nf_specific_patterns": {
+    "AMF": [
+      {
+        "id": "AMF-001",
+        "name": "NAS Security Mode Command Bypass",
+        "severity": "critical",
+        "description": "NAS messages accepted without completed security mode control procedure",
+        "cwe": ["CWE-287", "CWE-757"],
+        "detection_hints": ["SecurityModeComplete", "NASSecurityMode", "securityContext", "CipheredNAS"],
+        "audit_focus": "Verify NAS message handlers check security context is established before processing protected messages",
+        "spec_reference": "TS 33.501 Section 6.7.2"
+      },
+      {
+        "id": "AMF-002",
+        "name": "NGAP Message Injection via Malformed IE",
+        "severity": "critical",
+        "description": "NGAP protocol message with crafted Information Elements causing unexpected behavior",
+        "cwe": ["CWE-20", "CWE-74"],
+        "detection_hints": ["ngap_message", "InitialUEMessage", "HandoverRequest", "PathSwitchRequest"],
+        "audit_focus": "Check NGAP IE parsing for proper validation of mandatory/optional IEs and value ranges"
+      },
+      {
+        "id": "AMF-003",
+        "name": "SUCI Concealment Bypass",
+        "severity": "critical",
+        "description": "SUPI derivation from SUCI without proper null-scheme detection or protection scheme validation",
+        "cwe": ["CWE-311", "CWE-327"],
+        "detection_hints": ["SUCI", "SUPI", "DeconcealdSuci", "NullScheme", "ProfileA", "ProfileB"],
+        "audit_focus": "Verify SUCI-to-SUPI resolution enforces encryption scheme and rejects null-scheme in production",
+        "spec_reference": "TS 33.501 Section 6.12"
+      },
+      {
+        "id": "AMF-004",
+        "name": "Unauthorized Inter-AMF Handover",
+        "severity": "high",
+        "description": "UE context transfer between AMFs without proper source AMF authentication",
+        "cwe": ["CWE-346"],
+        "detection_hints": ["UEContextTransfer", "N14", "CreateUEContext", "HandoverRequired"],
+        "audit_focus": "Verify source AMF identity is validated during UE context transfer"
+      },
+      {
+        "id": "AMF-005",
+        "name": "Registration Request Replay",
+        "severity": "high",
+        "description": "Registration requests accepted without checking freshness (e.g., via uplink NAS count)",
+        "cwe": ["CWE-294"],
+        "detection_hints": ["RegistrationRequest", "NASCount", "sqn", "FreshSecurityContext"],
+        "audit_focus": "Check if NAS uplink count or anti-replay mechanisms are enforced on registration"
+      }
+    ],
+    "SMF": [
+      {
+        "id": "SMF-001",
+        "name": "Unauthorized PDU Session Establishment",
+        "severity": "critical",
+        "description": "PDU session creation without proper subscription/authorization checks",
+        "cwe": ["CWE-862", "CWE-285"],
+        "detection_hints": ["CreateSMContext", "PDUSessionEstablishment", "DNN", "SNSSAI", "subscribedData"],
+        "audit_focus": "Verify DNN/S-NSSAI authorization checks against subscription data before session establishment",
+        "spec_reference": "TS 33.501 Section 6.6"
+      },
+      {
+        "id": "SMF-002",
+        "name": "PFCP Session Hijacking",
+        "severity": "critical",
+        "description": "PFCP association or session modification messages accepted from unauthorized sources",
+        "cwe": ["CWE-346", "CWE-290"],
+        "detection_hints": ["PFCPSessionEstablishment", "PFCPSessionModification", "PFCPAssociation", "NodeID"],
+        "audit_focus": "Check PFCP message source validation and session ownership verification"
+      },
+      {
+        "id": "SMF-003",
+        "name": "GTP Tunnel Endpoint Manipulation",
+        "severity": "high",
+        "description": "TEID assignment or F-TEID manipulation allowing traffic redirection",
+        "cwe": ["CWE-471"],
+        "detection_hints": ["TEID", "F-TEID", "CreatePDR", "CreateFAR", "OuterHeaderCreation"],
+        "audit_focus": "Verify TEID uniqueness and validate F-TEID references during PDR/FAR creation"
+      },
+      {
+        "id": "SMF-004",
+        "name": "QoS Policy Bypass",
+        "severity": "medium",
+        "description": "QoS flow rules that can be manipulated to bypass bandwidth/priority controls",
+        "cwe": ["CWE-863"],
+        "detection_hints": ["QFI", "QoSRules", "QER", "GBR", "MBR", "SessionAMBR"],
+        "audit_focus": "Verify QoS parameters are validated against policy decisions from PCF"
+      }
+    ],
+    "UPF": [
+      {
+        "id": "UPF-001",
+        "name": "GTP-U Packet Injection",
+        "severity": "critical",
+        "description": "GTP-U data plane packets accepted without proper tunnel endpoint validation",
+        "cwe": ["CWE-346", "CWE-20"],
+        "detection_hints": ["GTPv1U", "TEID", "ExtensionHeader", "PDUSessionContainer"],
+        "audit_focus": "Verify GTP-U packet TEID matches established PDR rules and source IP validation"
+      },
+      {
+        "id": "UPF-002",
+        "name": "PFCP Rule Manipulation",
+        "severity": "critical",
+        "description": "PDR/FAR/QER rules created or modified without proper SMF authorization",
+        "cwe": ["CWE-862"],
+        "detection_hints": ["CreatePDR", "CreateFAR", "CreateQER", "UpdatePDR", "DeletePDR"],
+        "audit_focus": "Verify PFCP association state and session ownership before accepting rule modifications"
+      },
+      {
+        "id": "UPF-003",
+        "name": "Data Plane Traffic Leak via Incorrect FAR",
+        "severity": "critical",
+        "description": "Forwarding Action Rules misconfigured to redirect user traffic to attacker-controlled endpoints",
+        "cwe": ["CWE-441"],
+        "detection_hints": ["ForwardingParameters", "OuterHeaderCreation", "DestinationInterface", "RedirectInformation"],
+        "audit_focus": "Audit FAR destination validation logic and redirect information handling"
+      },
+      {
+        "id": "UPF-004",
+        "name": "Kernel/eBPF Bypass in Fast Path",
+        "severity": "high",
+        "description": "UPF fast path implementations using kernel bypass may skip security controls",
+        "cwe": ["CWE-693"],
+        "detection_hints": ["XDP", "eBPF", "DPDK", "AF_XDP", "bpf_redirect"],
+        "audit_focus": "Verify that kernel-bypass fast paths enforce the same PDR/FAR rules as the slow path"
+      }
+    ],
+    "AUSF": [
+      {
+        "id": "AUSF-001",
+        "name": "5G-AKA Authentication Vector Leak",
+        "severity": "critical",
+        "description": "Authentication vectors (RAND, AUTN, XRES*) exposed or cached insecurely",
+        "cwe": ["CWE-312", "CWE-316"],
+        "detection_hints": ["AuthenticationVector", "RAND", "AUTN", "XRES", "HXRES", "Kausf"],
+        "audit_focus": "Verify AV storage is memory-only with proper cleanup and no logging of sensitive fields",
+        "spec_reference": "TS 33.501 Section 6.1"
+      },
+      {
+        "id": "AUSF-002",
+        "name": "EAP-AKA' State Machine Bypass",
+        "severity": "critical",
+        "description": "EAP-AKA' authentication state machine accepts out-of-sequence messages",
+        "cwe": ["CWE-287", "CWE-841"],
+        "detection_hints": ["EapAkaPrime", "EAP-Response", "EAP-Success", "authCtx.State"],
+        "audit_focus": "Verify strict state machine transitions and rejection of unexpected EAP message types"
+      },
+      {
+        "id": "AUSF-003",
+        "name": "SQN Synchronization Failure Exploitation",
+        "severity": "high",
+        "description": "Sequence number resynchronization mechanism exploitable for DoS or replay",
+        "cwe": ["CWE-330"],
+        "detection_hints": ["SQN", "AUTS", "Resynchronization", "MacFailure"],
+        "audit_focus": "Check SQN resync rate limiting and validation of AUTS parameters"
+      }
+    ],
+    "NRF": [
+      {
+        "id": "NRF-001",
+        "name": "NF Profile Spoofing",
+        "severity": "critical",
+        "description": "Unauthorized NF registration or profile update allowing service impersonation",
+        "cwe": ["CWE-290"],
+        "detection_hints": ["NFRegister", "NFUpdate", "NFProfile", "nfInstanceId", "nfType"],
+        "audit_focus": "Verify NF registration validates identity claims against TLS client certificate",
+        "spec_reference": "TS 33.501 Section 13.3.1"
+      },
+      {
+        "id": "NRF-002",
+        "name": "Service Discovery Information Leak",
+        "severity": "high",
+        "description": "NF discovery endpoint returns excessive information about network topology",
+        "cwe": ["CWE-200"],
+        "detection_hints": ["NFDiscover", "SearchNFInstances", "nfProfile", "ipv4Addresses"],
+        "audit_focus": "Check if discovery responses are filtered based on requester authorization scope"
+      },
+      {
+        "id": "NRF-003",
+        "name": "OAuth2 Token Scope Bypass",
+        "severity": "critical",
+        "description": "Access tokens issued with overly broad scope or without proper client authentication",
+        "cwe": ["CWE-269", "CWE-863"],
+        "detection_hints": ["AccessToken", "TokenRequest", "scope", "nfType", "Claims"],
+        "audit_focus": "Verify token scope validation and NF type-based access control",
+        "spec_reference": "TS 33.501 Section 13.4"
+      }
+    ],
+    "UDM": [
+      {
+        "id": "UDM-001",
+        "name": "Subscriber Data Unauthorized Access",
+        "severity": "critical",
+        "description": "Subscription data retrieved or modified without proper authorization checks",
+        "cwe": ["CWE-862", "CWE-639"],
+        "detection_hints": ["GetSubscriberData", "ModifySubscription", "SUPI", "subscribedData"],
+        "audit_focus": "Verify requester NF authorization before returning or modifying subscriber data"
+      },
+      {
+        "id": "UDM-002",
+        "name": "Authentication Credential Exposure",
+        "severity": "critical",
+        "description": "Permanent keys (K) or derived keys exposed through UDM interfaces",
+        "cwe": ["CWE-312"],
+        "detection_hints": ["AuthenticationData", "permanentKey", "OPc", "GenerateAuthData"],
+        "audit_focus": "Verify authentication data generation keeps permanent keys internal and only exposes derived vectors"
+      }
+    ],
+    "PCF": [
+      {
+        "id": "PCF-001",
+        "name": "Policy Rule Injection",
+        "severity": "high",
+        "description": "Unauthorized creation or modification of SM policies allowing QoS abuse",
+        "cwe": ["CWE-862"],
+        "detection_hints": ["SmPolicyCreate", "SmPolicyUpdate", "PccRule", "AuthorizedQoS"],
+        "audit_focus": "Verify policy decisions are based on authenticated subscriber context and proper authorization"
+      },
+      {
+        "id": "PCF-002",
+        "name": "Charging Policy Bypass",
+        "severity": "high",
+        "description": "Manipulation of charging rules to avoid billing for data usage",
+        "cwe": ["CWE-863"],
+        "detection_hints": ["ChargingData", "URR", "UsageReport", "RatingGroup"],
+        "audit_focus": "Verify charging rules cannot be modified or bypassed through policy update requests"
+      }
+    ]
+  }
+}

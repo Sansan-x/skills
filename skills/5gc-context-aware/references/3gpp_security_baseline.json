@@ -1,0 +1,255 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "3GPP security baseline checks derived from TS 33.501 and related specifications",
+    "primary_spec": "3GPP TS 33.501 V17 - Security Architecture and Procedures for 5G System"
+  },
+  "compliance_checks": {
+    "authentication": {
+      "spec_section": "TS 33.501 Section 6.1",
+      "title": "Primary Authentication and Key Agreement",
+      "checks": [
+        {
+          "id": "AUTH-001",
+          "requirement": "5G-AKA or EAP-AKA' must be used for primary authentication",
+          "detection": "Search for authentication procedure implementations; verify 5G-AKA or EAP-AKA' state machines exist",
+          "code_patterns": ["5gAka", "EapAkaPrime", "AuthenticationProcedure", "UeAuthentication"],
+          "fail_condition": "No authentication procedure found or custom/weakened auth implementation",
+          "severity": "critical"
+        },
+        {
+          "id": "AUTH-002",
+          "requirement": "Home network must authenticate the serving network during primary authentication",
+          "detection": "Verify SN-Name (serving network name) is included in authentication vector derivation",
+          "code_patterns": ["servingNetworkName", "SN-Name", "snName", "ServingNetwork"],
+          "fail_condition": "SN-Name not included in key derivation or authentication request",
+          "severity": "critical"
+        },
+        {
+          "id": "AUTH-003",
+          "requirement": "SUPI shall not be transferred in cleartext over any 5G interface",
+          "detection": "Check if SUPI is sent in messages without SUCI concealment",
+          "code_patterns": ["supi", "SUPI", "suci", "SUCI", "ProtectionScheme"],
+          "fail_condition": "SUPI transmitted without concealment outside of NDS/IP protected SBI",
+          "severity": "critical"
+        },
+        {
+          "id": "AUTH-004",
+          "requirement": "The UE and network shall support 5G-GUTI allocation for privacy",
+          "detection": "Verify GUTI allocation logic exists in registration accept flow",
+          "code_patterns": ["5gGuti", "GutiAllocation", "RegistrationAccept", "AllocateGuti"],
+          "fail_condition": "No GUTI allocation in registration accept or GUTI reuse without refresh",
+          "severity": "high"
+        }
+      ]
+    },
+    "nas_security": {
+      "spec_section": "TS 33.501 Section 6.7",
+      "title": "NAS Security",
+      "checks": [
+        {
+          "id": "NAS-001",
+          "requirement": "NAS signalling shall be integrity protected and ciphered after security mode control",
+          "detection": "Verify NAS encode/decode applies integrity protection and ciphering",
+          "code_patterns": ["NASEncode", "NASDecode", "IntegrityProtect", "NASCipher", "SecurityHeader"],
+          "fail_condition": "NAS messages sent/accepted without integrity protection after SMC completion",
+          "severity": "critical"
+        },
+        {
+          "id": "NAS-002",
+          "requirement": "NAS NULL integrity protection (NIA0) shall only be used before security is activated",
+          "detection": "Check if NIA0 is used after security mode control completion",
+          "code_patterns": ["NIA0", "IntegrityAlgorithm", "SecurityAlgorithm", "AlgorithmSelect"],
+          "fail_condition": "NIA0 accepted or selected after security activation",
+          "severity": "critical"
+        },
+        {
+          "id": "NAS-003",
+          "requirement": "NAS COUNT shall be maintained and checked for replay protection",
+          "detection": "Verify NAS sequence number checking in decode path",
+          "code_patterns": ["NASCount", "UplinkCount", "DownlinkCount", "SequenceNumber", "overflow"],
+          "fail_condition": "NAS COUNT not checked or reset without re-authentication",
+          "severity": "critical"
+        },
+        {
+          "id": "NAS-004",
+          "requirement": "Initial NAS messages shall be limited to Registration Request, Service Request, and Deregistration Request",
+          "detection": "Check what NAS messages are accepted without security context",
+          "code_patterns": ["InitialMessage", "PlainNAS", "UnprotectedNAS", "HandleMessage"],
+          "fail_condition": "Non-initial NAS message types accepted without active security context",
+          "severity": "high"
+        }
+      ]
+    },
+    "ngap_security": {
+      "spec_section": "TS 33.501 Section 9.2",
+      "title": "NGAP (N2) Security",
+      "checks": [
+        {
+          "id": "NGAP-001",
+          "requirement": "NGAP shall be protected using NDS/IP (IPsec or DTLS)",
+          "detection": "Check if SCTP/NGAP transport has security layer configuration",
+          "code_patterns": ["IPsec", "DTLS", "sctpConfig", "NgapTransport", "SecurityPolicy"],
+          "fail_condition": "NGAP connection established without transport layer security",
+          "severity": "high"
+        },
+        {
+          "id": "NGAP-002",
+          "requirement": "AMF shall validate the RAN node identity during NGAP setup",
+          "detection": "Check NG Setup procedure for RAN identity validation",
+          "code_patterns": ["NGSetup", "GlobalRANNodeID", "RanNodeId", "ValidateRAN"],
+          "fail_condition": "NG Setup accepted without validating the RAN node identity",
+          "severity": "high"
+        }
+      ]
+    },
+    "sbi_security": {
+      "spec_section": "TS 33.501 Section 13",
+      "title": "Service Based Interface Security",
+      "checks": [
+        {
+          "id": "SBI-001",
+          "requirement": "Mutual TLS (mTLS) shall be used for SBI communication",
+          "detection": "Check HTTP client/server TLS configuration for client certificate requirement",
+          "code_patterns": ["tls.Config", "ClientAuth", "RequireAndVerifyClientCert", "ClientCAs"],
+          "fail_condition": "SBI endpoints accessible without mutual TLS authentication",
+          "severity": "critical"
+        },
+        {
+          "id": "SBI-002",
+          "requirement": "OAuth 2.0 based authorization shall be supported for NF service access",
+          "detection": "Verify OAuth2 token validation middleware on SBI endpoints",
+          "code_patterns": ["OAuth", "AccessToken", "TokenValidation", "BearerToken", "Authorization"],
+          "fail_condition": "SBI endpoints lack OAuth2 token validation",
+          "severity": "critical"
+        },
+        {
+          "id": "SBI-003",
+          "requirement": "NF service consumer shall include the access token in service requests",
+          "detection": "Check SBI client code includes token in Authorization header",
+          "code_patterns": ["Authorization", "Bearer", "SendRequest", "HttpClient", "SetHeader"],
+          "fail_condition": "SBI client sends requests without access token",
+          "severity": "high"
+        },
+        {
+          "id": "SBI-004",
+          "requirement": "TLS version shall be 1.2 or higher with approved cipher suites",
+          "detection": "Check TLS configuration for minimum version and cipher suite selection",
+          "code_patterns": ["MinVersion", "tls.VersionTLS12", "CipherSuites", "tls.Config"],
+          "fail_condition": "TLS version below 1.2 or weak cipher suites enabled",
+          "severity": "high"
+        }
+      ]
+    },
+    "pfcp_security": {
+      "spec_section": "TS 33.501 Section 9.3 / TS 29.244",
+      "title": "PFCP (N4) Security",
+      "checks": [
+        {
+          "id": "PFCP-001",
+          "requirement": "PFCP communication shall be secured using NDS/IP or application level security",
+          "detection": "Check PFCP transport for security configuration",
+          "code_patterns": ["PFCPServer", "PFCPConn", "UDPAddr", "pfcpSecurity"],
+          "fail_condition": "PFCP runs over plain UDP without IPsec or authentication",
+          "severity": "high"
+        },
+        {
+          "id": "PFCP-002",
+          "requirement": "PFCP Association Setup shall validate the peer node identity",
+          "detection": "Check association setup handler for node identity verification",
+          "code_patterns": ["AssociationSetup", "NodeID", "RecoveryTimestamp", "ValidateNode"],
+          "fail_condition": "PFCP association established without peer validation",
+          "severity": "high"
+        },
+        {
+          "id": "PFCP-003",
+          "requirement": "PFCP session operations shall be authorized by the controlling function",
+          "detection": "Verify session establishment/modification checks association state",
+          "code_patterns": ["SessionEstablishment", "SessionModification", "AssociationState", "authorized"],
+          "fail_condition": "Session operations accepted from unassociated or unauthorized peers",
+          "severity": "critical"
+        }
+      ]
+    },
+    "subscriber_privacy": {
+      "spec_section": "TS 33.501 Section 6.12",
+      "title": "Subscriber Privacy",
+      "checks": [
+        {
+          "id": "PRIV-001",
+          "requirement": "SUCI concealment shall use ECIES Profile A or Profile B",
+          "detection": "Verify SUCI deconcealment uses proper ECIES implementation",
+          "code_patterns": ["ECIES", "ProfileA", "ProfileB", "DeconcealdSuci", "ProtectionScheme"],
+          "fail_condition": "SUCI null-scheme accepted or ECIES implementation missing",
+          "severity": "critical"
+        },
+        {
+          "id": "PRIV-002",
+          "requirement": "5G-GUTI shall be refreshed regularly to prevent tracking",
+          "detection": "Check GUTI refresh logic in registration and service procedures",
+          "code_patterns": ["GutiReallocation", "NewGuti", "GutiRefresh", "T3512"],
+          "fail_condition": "GUTI never refreshed or refresh interval too long",
+          "severity": "high"
+        },
+        {
+          "id": "PRIV-003",
+          "requirement": "Paging messages shall not reveal permanent subscriber identities",
+          "detection": "Check paging message construction for identity types used",
+          "code_patterns": ["Paging", "PagingIdentity", "5G-S-TMSI", "IMSI"],
+          "fail_condition": "SUPI/IMSI used in paging messages instead of 5G-S-TMSI",
+          "severity": "high"
+        }
+      ]
+    },
+    "key_management": {
+      "spec_section": "TS 33.501 Annex A",
+      "title": "Key Derivation and Management",
+      "checks": [
+        {
+          "id": "KEY-001",
+          "requirement": "Key derivation shall follow the defined key hierarchy (KAUSF -> KSEAF -> KAMF -> KNASint/KNASenc/KgNB)",
+          "detection": "Verify key derivation functions follow the 5G key hierarchy",
+          "code_patterns": ["KDF", "KeyDerivation", "HMAC-SHA-256", "AnsiX963KDF"],
+          "fail_condition": "Key derivation skips hierarchy levels or uses non-standard KDF",
+          "severity": "critical"
+        },
+        {
+          "id": "KEY-002",
+          "requirement": "Key separation shall be maintained between different security contexts",
+          "detection": "Check that keys are derived with proper FC values and input parameters",
+          "code_patterns": ["FC", "KeyDerivation", "InputString", "P0", "L0"],
+          "fail_condition": "Same key used across different security contexts or FC values incorrect",
+          "severity": "critical"
+        },
+        {
+          "id": "KEY-003",
+          "requirement": "Security keys shall be securely erased when no longer needed",
+          "detection": "Check for key material cleanup in deregistration and context release paths",
+          "code_patterns": ["Deregistration", "ContextRelease", "ClearKeys", "SecurityContext"],
+          "fail_condition": "Key material persists in memory after UE deregistration or context release",
+          "severity": "high"
+        }
+      ]
+    }
+  },
+  "interface_security_matrix": {
+    "N1": {"protocol": "NAS-5G", "security": "NAS ciphering + integrity", "spec": "TS 33.501 Section 6.7"},
+    "N2": {"protocol": "NGAP/SCTP", "security": "NDS/IP (IPsec)", "spec": "TS 33.501 Section 9.2"},
+    "N3": {"protocol": "GTP-U", "security": "NDS/IP (IPsec)", "spec": "TS 33.501 Section 9.3"},
+    "N4": {"protocol": "PFCP/UDP", "security": "NDS/IP or app-level", "spec": "TS 33.501 Section 9.3"},
+    "N6": {"protocol": "IP", "security": "Operator policy", "spec": "TS 33.501"},
+    "N7": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N8": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N9": {"protocol": "GTP-U", "security": "NDS/IP (IPsec)", "spec": "TS 33.501 Section 9.3"},
+    "N10": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N11": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N12": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N13": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N14": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N15": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N22": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N27": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N35": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"},
+    "N36": {"protocol": "HTTP/2", "security": "mTLS + OAuth2", "spec": "TS 33.501 Section 13"}
+  }
+}
