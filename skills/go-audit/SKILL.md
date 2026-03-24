@@ -403,18 +403,18 @@ description: 全面的Go代码安全审计技能。对Go项目进行深度漏洞
 
 ### 报告输出
 
-报告输出到 `./reports/` 目录下，文件命名规则：
+报告输出到 `../reports/` 目录下，文件命名规则：
 
 ```
-./reports/[项目名称]-goaudit-[YYYYMMDD-HHMM].md
+../reports/[项目名称]-goaudit-[YYYYMMDD-HHMM].md
 ```
 
-例如：`./reports/myproject-goaudit-20260319-1430.md`
+例如：`../reports/myproject-goaudit-20260319-1430.md`
 
-在生成报告前，先创建 `./reports/` 目录（如果不存在）：
+在生成报告前，先创建 `../reports/` 目录（如果不存在）：
 
 ```bash
-mkdir -p ./reports
+mkdir -p ../reports
 ```
 
 项目名称从 `go.mod` 的 module 声明中提取（取最后一个路径段），如果不可用则使用项目根目录名。时间使用审计执行时的当前时间。
