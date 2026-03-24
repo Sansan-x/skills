@@ -71,9 +71,9 @@ description: >
 
 ### 2. 位置字段
 
-- 解析 `path/to/file.py:42` 或 `文件: xxx.py 行号: 42-50 函数: foo()` 等模式。
-- 分别填充 `file_path`、`line_start`、`line_end`、`function_name`，
-  并组合生成可读的 `location` 字符串（`file_path:line_start function_name`）。
+- 解析 `path/to/file.py:42` 或 `文件: xxx.py 行号: 42-50` 等模式。
+- 分别填充 `file_path`、`line_start`、`line_end`，
+  并组合生成可读的 `location` 字符串（`file_path:line_start`）。
 
 ### 3. CVSS 与 CWE
 
@@ -91,10 +91,8 @@ description: >
 ### 5. 代码与数据流
 
 - `vulnerable_code`：逐字提取代码片段（保留原始格式）。
-- 数据流字段（`dataflow_source`、`dataflow_propagation`、`dataflow_sink`、
-  `dataflow_sanitization`、`dataflow_conclusion`）：从报告的污点分析或
-  数据流分析章节中提取。`dataflow_propagation` 应为 JSON 字符串数组，
-  每个元素对应一个传播步骤。
+- `dataflow`：直接从审计报告中提取"数据流分析"/"数据流路径"/"污点分析"等
+  章节的完整文本内容，作为一个字符串原样保留，不做拆分。若报告中无此章节则设为 `null`。
 
 ### 6. 利用场景与影响
 
@@ -154,17 +152,12 @@ description: >
       "file_path": "src/db/query.py",
       "line_start": 42,
       "line_end": 55,
-      "function_name": "execute_query",
       "vulnerability_title": "SQL注入漏洞",
       "vulnerability_essence": "用户输入直接拼接到SQL查询语句中",
       "root_cause": "未对用户输入进行参数化处理",
       "security_impact": "攻击者可执行任意SQL语句，读取/修改/删除数据库数据",
       "vulnerable_code": "query = \"SELECT * FROM users WHERE id = \" + user_input",
-      "dataflow_source": "HTTP请求参数 user_id",
-      "dataflow_propagation": ["request.args['user_id']", "user_input = request.args['user_id']", "query = 'SELECT ... ' + user_input"],
-      "dataflow_sink": "cursor.execute(query)",
-      "dataflow_sanitization": "无净化措施",
-      "dataflow_conclusion": "污点数据从HTTP请求参数直接传播到SQL执行点，未经任何过滤",
+      "dataflow": "污点源 (Source): HTTP请求参数 user_id\n传播路径:\n1. request.args['user_id'] — 用户输入进入应用\n2. user_input = request.args['user_id']\n3. query = 'SELECT ... ' + user_input\n汇聚点 (Sink): cursor.execute(query)\n净化检查: 无净化措施\n结论: 污点数据从HTTP请求参数直接传播到SQL执行点，未经任何过滤",
       "exploit_steps": "1. 构造恶意user_id参数\n2. 发送请求: GET /api/user?user_id=1 OR 1=1\n3. 获取所有用户数据",
       "exploit_poc": "curl 'http://target/api/user?user_id=1%20OR%201%3D1'",
       "impact_confidentiality": "高",

@@ -44,7 +44,6 @@
 | `file_path`     | string  | 否       | 文件路径                                                                       | 漏洞文件的相对路径。                 |
 | `line_start`    | integer | 否       | 正整数                                                                         | 漏洞代码起始行号。                   |
 | `line_end`      | integer | 否       | 正整数，≥ `line_start`                                                         | 漏洞代码结束行号。                   |
-| `function_name` | string  | 否       | 函数/方法名称                                                                  | 包含漏洞的函数名。                   |
 
 ### 严重性映射参考
 
@@ -98,17 +97,14 @@
 
 ## 数据流路径
 
-| 字段                     | 类型          | 是否必填 | 说明                                                                           |
-| ------------------------ | ------------- | -------- | ------------------------------------------------------------------------------ |
-| `dataflow_source`        | string        | 否       | 污点源——不可信数据的入口（如HTTP参数、文件输入）。                               |
-| `dataflow_propagation`   | array[string] | 否       | 从源到汇聚点的有序传播步骤列表。每个元素是一个代码表达式或步骤描述。             |
-| `dataflow_sink`          | string        | 否       | 消费污点数据的危险函数调用（如 `cursor.execute()`、`eval()`）。                  |
-| `dataflow_sanitization`  | string        | 否       | 已应用的净化或验证措施的描述（或说明缺乏净化措施）。                             |
-| `dataflow_conclusion`    | string        | 否       | 污点分析的总结结论。                                                           |
+| 字段       | 类型   | 是否必填 | 说明                                                                                       |
+| ---------- | ------ | -------- | ------------------------------------------------------------------------------------------ |
+| `dataflow` | string | 否       | 从审计报告中直接提取的"数据流分析"/"数据流路径"/"污点分析"章节的完整原文，作为字符串原样保留。 |
 
 **提取提示：**
-- 查找标注为"数据流分析"、"污点分析"、"Taint Analysis"、"Data Flow"、"Source-Sink"的章节。
-- `dataflow_propagation` 序列化为 JSON 字符串数组，每个步骤对应一个元素。
+- 查找标注为"数据流分析"、"数据流路径"、"污点分析"、"Taint Analysis"、"Data Flow"、"Source-Sink"的章节。
+- 将该章节的完整文本内容（包括污点源、传播路径、汇聚点、净化检查、结论等）直接作为一个字符串输出，不做拆分。
+- 保留原文中的换行符和格式。若报告中无此章节则设为 `null`。
 
 ---
 
@@ -244,17 +240,12 @@
           "file_path":                  { "type": ["string", "null"], "description": "文件路径" },
           "line_start":                 { "type": ["integer", "null"], "description": "起始行号" },
           "line_end":                   { "type": ["integer", "null"], "description": "结束行号" },
-          "function_name":              { "type": ["string", "null"], "description": "函数名" },
           "vulnerability_title":        { "type": "string", "description": "漏洞标题" },
           "vulnerability_essence":      { "type": ["string", "null"], "description": "漏洞本质" },
           "root_cause":                 { "type": ["string", "null"], "description": "根因分析" },
           "security_impact":            { "type": ["string", "null"], "description": "安全影响" },
           "vulnerable_code":            { "type": ["string", "null"], "description": "漏洞代码片段" },
-          "dataflow_source":            { "type": ["string", "null"], "description": "污点源（Source）" },
-          "dataflow_propagation":       { "type": ["array", "null"], "items": { "type": "string" }, "description": "传播路径（JSON数组）" },
-          "dataflow_sink":              { "type": ["string", "null"], "description": "汇聚点（Sink）" },
-          "dataflow_sanitization":      { "type": ["string", "null"], "description": "净化检查" },
-          "dataflow_conclusion":        { "type": ["string", "null"], "description": "数据流结论" },
+          "dataflow":                   { "type": ["string", "null"], "description": "数据流路径（直接从报告中提取的完整原文）" },
           "exploit_steps":              { "type": ["string", "null"], "description": "攻击步骤" },
           "exploit_poc":                { "type": ["string", "null"], "description": "概念验证（PoC）" },
           "impact_confidentiality":     { "type": ["string", "null"], "enum": ["高", "中", "低", null], "description": "机密性影响" },
@@ -297,17 +288,12 @@
 |            | file_path                  | string        | 否       | 文件路径                                      |
 |            | line_start                 | integer       | 否       | 起始行号                                      |
 |            | line_end                   | integer       | 否       | 结束行号                                      |
-|            | function_name              | string        | 否       | 函数名                                        |
 | **漏洞描述** | vulnerability_title        | string        | 是       | 漏洞标题                                      |
 |            | vulnerability_essence      | string        | 否       | 漏洞本质                                      |
 |            | root_cause                 | string        | 否       | 根因分析                                      |
 |            | security_impact            | string        | 否       | 安全影响                                      |
 | **漏洞代码** | vulnerable_code            | string        | 否       | 漏洞代码片段                                  |
-| **数据流路径** | dataflow_source          | string        | 否       | 污点源（Source）                              |
-|            | dataflow_propagation       | array[string] | 否       | 传播路径（JSON数组）                          |
-|            | dataflow_sink              | string        | 否       | 汇聚点（Sink）                                |
-|            | dataflow_sanitization      | string        | 否       | 净化检查                                      |
-|            | dataflow_conclusion        | string        | 否       | 数据流结论                                    |
+| **数据流路径** | dataflow                 | string        | 否       | 数据流路径（直接从报告中提取的完整原文）      |
 | **利用场景** | exploit_steps              | string        | 否       | 攻击步骤                                      |
 |            | exploit_poc                | string        | 否       | 概念验证（PoC）                               |
 | **影响**   | impact_confidentiality     | string        | 否       | 机密性影响（高/中/低）                        |
