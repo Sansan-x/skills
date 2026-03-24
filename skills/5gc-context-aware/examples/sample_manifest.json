@@ -1,104 +1,172 @@
 {
-  "audit_manifest": {
-    "version": "1.0.0",
-    "generated_at": "2026-03-23T10:00:00Z",
-    "analysis_time_seconds": 3.45,
-    "project_dir": "/path/to/free5gc/NFs/amf",
-
-    "service_profile": {
-      "nf_type": "AMF",
-      "full_name": "Access and Mobility Management Function",
-      "confidence": 95.2,
-      "go_module": "github.com/free5gc/amf",
-      "interfaces": ["N1", "N2", "N8", "N11", "N12", "N14", "N15", "N22"],
-      "protocols": ["NGAP", "NAS-5G", "HTTP/2", "SCTP"],
-      "sbi_services": ["namf-comm", "namf-evts", "namf-loc", "namf-mt", "namf-oam"]
-    },
-
-    "interface_map": {
-      "http_framework": {"framework": "gin", "evidence": "found in go.mod: github.com/gin-gonic/gin"},
-      "sbi_route_count": 24,
+  "project_context": {
+    "nf_type": "SMF",
+    "nf_full_name": "Session Management Function",
+    "go_module": "github.com/free5gc/smf",
+    "confidence": 97.5,
+    "critical_interfaces": ["N4", "N11", "N7"],
+    "protocols": ["PFCP", "HTTP/2", "GTP-U"],
+    "sbi_services": ["nsmf-pdusession", "nsmf-event-exposure", "nsmf-oam"],
+    "security_level": "High",
+    "http_framework": "gin",
+    "stats": {
+      "sbi_routes": 12,
       "security_critical_routes": 8,
-      "protocol_handler_counts": {"NGAP": 15, "NAS": 22, "PFCP": 0, "GTP-U": 0},
-      "auth_middleware_count": 2,
-      "coverage_warnings": [
-        {
-          "severity": "high",
-          "type": "unprotected_critical_route",
-          "message": "Security-critical route /namf-comm/v1/ue-contexts/:ueContextId may lack auth middleware"
-        }
-      ]
+      "protocol_handlers": {"NGAP": 0, "NAS-5G": 0, "PFCP": 5, "GTP-U": 2},
+      "auth_middleware_count": 1,
+      "sensitive_assets_tagged": 85,
+      "compliance_rate": 65.0,
+      "critical_gaps": 3,
+      "insecure_patterns": 2
+    }
+  },
+  "audit_focus": [
+    {
+      "scope": "N4_Interface_Handler",
+      "pattern_id": "SMF-002",
+      "severity": "critical",
+      "target_func": "HandlePFCPSessionEstablishmentRequest",
+      "target_files": ["internal/pfcp/handler.go:112"],
+      "business_risk": "PFCP会话劫持，攻击者伪造SMF向UPF发送PFCP消息篡改转发规则，实现用户流量重定向或窃听",
+      "cwe": ["CWE-346", "CWE-290"],
+      "taint_sources": ["msg.NodeID", "msg.SEID", "msg.EntityID", "msg.RemoteF_TEID"],
+      "expected_sanitizers": ["ValidateUPFIdentity", "CheckNodeAssociation", "VerifyPFCPSource", "ValidateSEID"],
+      "audit_focus": "Check PFCP message source validation and session ownership verification",
+      "detection_hints": ["PFCPSessionEstablishment", "PFCPSessionModification", "PFCPAssociation", "NodeID"]
     },
-
-    "sensitive_assets": {
-      "total_tagged": 156,
-      "files_scanned": 89,
-      "category_summary": {
-        "subscriber_identity": {"critical": 34},
-        "cryptographic_keys": {"critical": 28},
-        "session_data": {"high": 45},
-        "security_context": {"critical": 22},
-        "location_data": {"high": 18}
-      },
-      "top_hotspots": [
-        {"file": "internal/context/amf_ue.go", "tag_count": 42, "categories": ["subscriber_identity", "cryptographic_keys", "security_context"]},
-        {"file": "internal/nas/handler.go", "tag_count": 28, "categories": ["subscriber_identity", "security_context"]},
-        {"file": "internal/ngap/handler.go", "tag_count": 19, "categories": ["session_data", "location_data"]}
-      ]
+    {
+      "scope": "PDU_Session_Authorization",
+      "pattern_id": "SMF-001",
+      "severity": "critical",
+      "target_func": "HandleCreateSMContext",
+      "target_files": ["internal/sbi/producer/pdu_session.go:45"],
+      "business_risk": "未经授权的PDU会话建立，攻击者可绕过签约数据检查非法使用网络数据服务或接入未授权DNN",
+      "cwe": ["CWE-862", "CWE-285"],
+      "taint_sources": ["request.DNN", "request.SNssai", "request.Supi", "smContext.PDUSessionID"],
+      "expected_sanitizers": ["ValidateDNNAuthorization", "CheckSNSSAISubscription", "VerifySubscriberData"],
+      "audit_focus": "Verify DNN/S-NSSAI authorization checks against subscription data before session establishment",
+      "spec_reference": "TS 33.501 Section 6.6"
     },
-
-    "compliance": {
-      "summary": {
-        "total_checks": 23,
-        "controls_present": 18,
-        "controls_not_found": 5,
-        "compliance_rate": 78.3,
-        "critical_gaps": 2
-      },
-      "critical_gaps": [
-        {"check_id": "NAS-002", "requirement": "NAS NULL integrity protection (NIA0) shall only be used before security is activated", "category": "nas_security"},
-        {"check_id": "SBI-002", "requirement": "OAuth 2.0 based authorization shall be supported for NF service access", "category": "sbi_security"}
-      ]
+    {
+      "scope": "N4_TEID_Management",
+      "pattern_id": "SMF-003",
+      "severity": "high",
+      "business_risk": "GTP隧道端点篡改导致用户数据面流量被重定向到攻击者控制的节点，实现数据窃取",
+      "cwe": ["CWE-471"],
+      "taint_sources": ["pdr.FTEID", "far.OuterHeaderCreation", "request.TEID", "fteid.IPv4Address"],
+      "expected_sanitizers": ["ValidateTEIDUniqueness", "CheckFTEIDOwnership", "VerifyTunnelEndpoint"],
+      "audit_focus": "Verify TEID uniqueness and validate F-TEID references during PDR/FAR creation",
+      "detection_hints": ["TEID", "F-TEID", "CreatePDR", "CreateFAR", "OuterHeaderCreation"]
     },
-
-    "audit_priority_queue": [
-      {
-        "priority": 1,
-        "type": "compliance_gap",
-        "description": "[CRITICAL] Missing: NAS NULL integrity protection (NIA0) shall only be used before security is activated",
-        "check_id": "NAS-002",
-        "action": "Verify if NIA0 usage is properly restricted to pre-security-activation phase"
-      },
-      {
-        "priority": 1,
-        "type": "compliance_gap",
-        "description": "[CRITICAL] Missing: OAuth 2.0 based authorization shall be supported for NF service access",
-        "check_id": "SBI-002",
-        "action": "Verify if OAuth2 token validation is implemented elsewhere or truly missing"
-      },
-      {
-        "priority": 2,
-        "type": "attack_pattern",
-        "description": "[CRITICAL] NAS Security Mode Command Bypass",
-        "pattern_id": "AMF-001",
-        "cwe": ["CWE-287", "CWE-757"],
-        "action": "Verify NAS message handlers check security context is established before processing protected messages"
-      },
-      {
-        "priority": 2,
-        "type": "attack_pattern",
-        "description": "[CRITICAL] SUCI Concealment Bypass",
-        "pattern_id": "AMF-003",
-        "cwe": ["CWE-311", "CWE-327"],
-        "action": "Verify SUCI-to-SUPI resolution enforces encryption scheme and rejects null-scheme in production"
-      },
-      {
-        "priority": 3,
-        "type": "entry_point_review",
-        "description": "Review entry point: NAS handler: RegistrationRequest",
-        "target": "internal/nas/handler.go:45",
-        "action": "Perform taint analysis from this entry point"
-      }
-    ]
-  }
+    {
+      "scope": "Protocol_Message_Parser",
+      "pattern_id": "COM-001",
+      "severity": "critical",
+      "business_risk": "协议消息解析越界导致核心网组件崩溃(DoS)或远程代码执行",
+      "cwe": ["CWE-120", "CWE-125", "CWE-787"],
+      "taint_sources": ["rawData", "nasPdu", "pfcpMsg", "ngapPdu", "msg.Payload"],
+      "expected_sanitizers": ["ValidateMessageLength", "CheckIEBounds", "VerifyMandatoryIEs"],
+      "audit_focus": "Check all Unmarshal/Decode calls for error handling and length validation before accessing decoded fields",
+      "detection_hints": ["aper.Unmarshal", "nas.Decode", "pfcp.Decode", "binary.Read", "bytes.NewBuffer"]
+    },
+    {
+      "scope": "SBI_Auth_Middleware",
+      "pattern_id": "COM-002",
+      "severity": "critical",
+      "business_risk": "SBI接口未鉴权导致任意NF可冒充合法请求者访问核心网服务",
+      "cwe": ["CWE-306", "CWE-862"],
+      "taint_sources": ["c.Request.Header", "c.GetHeader(\"Authorization\")", "c.Request.TLS"],
+      "expected_sanitizers": ["VerifyAccessToken", "ValidateOAuth2Token", "CheckClientCertificate", "AuthMiddleware"],
+      "audit_focus": "Verify every SBI route group has middleware enforcing access token validation per TS 33.501 Section 13.3"
+    },
+    {
+      "scope": "PFCP_Handler_SessionEstablishmentRequest",
+      "target_func": "HandleSessionEstablishmentRequest",
+      "target_files": ["internal/pfcp/handler.go:112"],
+      "protocol": "PFCP",
+      "severity": "high",
+      "business_risk": "非法PFCP会话建立可创建恶意转发规则劫持用户流量",
+      "taint_sources": ["msg.CreatePDR", "msg.CreateFAR", "msg.CreateQER", "msg.SEID"],
+      "expected_sanitizers": ["VerifyAssociationState", "ValidateRuleConsistency"],
+      "audit_focus": "Review PFCP SessionEstablishmentRequest handler for input validation and security checks"
+    },
+    {
+      "scope": "PFCP_Handler_SessionModificationRequest",
+      "target_func": "HandleSessionModificationRequest",
+      "target_files": ["internal/pfcp/handler.go:198"],
+      "protocol": "PFCP",
+      "severity": "high",
+      "business_risk": "PFCP会话修改可篡改现有转发规则重定向用户数据",
+      "taint_sources": ["msg.UpdatePDR", "msg.UpdateFAR", "msg.RemovePDR"],
+      "expected_sanitizers": ["CheckSessionOwnership", "ValidateModification"],
+      "audit_focus": "Review PFCP SessionModificationRequest handler for input validation and security checks"
+    },
+    {
+      "scope": "SBI_nsmf-pdusession__sm-contexts",
+      "target_files": ["internal/sbi/router.go:32"],
+      "method": "POST",
+      "path": "/nsmf-pdusession/v1/sm-contexts",
+      "severity": "high",
+      "business_risk": "SBI接口nsmf-pdusession操作/sm-contexts未经授权访问可导致核心网服务被滥用",
+      "taint_sources": ["c.Request.Body", "c.Param(\"*\")", "c.GetHeader(\"Authorization\")"],
+      "expected_sanitizers": ["VerifyAccessToken", "ValidateRequestBody", "CheckNFAuthorization"],
+      "audit_focus": "Verify subscriber authorization for DNN/S-NSSAI"
+    },
+    {
+      "scope": "Sensitive_Data_cryptographic_keys",
+      "target_var": "KnasEnc, KnasInt, Kamf",
+      "target_files": ["internal/context/smf_context.go:55", "internal/context/sm_context.go:78"],
+      "severity": "critical",
+      "business_risk": "密钥材料泄露可导致NAS消息解密、伪造完整性校验和用户通信窃听",
+      "taint_sinks": ["log_output", "http_response", "file_write", "error_message", "database_write", "cache_store"],
+      "expected_sanitizers": ["ZeroizeKeyMaterial", "SecureKeyStore", "PreventKeyLogging", "UseHSM"],
+      "audit_focus": "Track data flow of cryptographic_keys variables to ensure no unauthorized exposure"
+    },
+    {
+      "scope": "Sensitive_Data_session_data",
+      "target_var": "teid, pduSessionId, ueIpAddr, dnn",
+      "target_files": ["internal/context/sm_context.go:22", "internal/pfcp/handler.go:88"],
+      "severity": "high",
+      "business_risk": "会话数据泄露可导致GTP隧道劫持、用户流量重定向和QoS策略篡改",
+      "taint_sinks": ["log_output", "http_response", "error_message", "unencrypted_channel"],
+      "expected_sanitizers": ["ValidateTEIDOwnership", "CheckSessionAuthorization", "SanitizeSessionResponse"],
+      "audit_focus": "Track data flow of session_data variables to ensure no unauthorized exposure"
+    },
+    {
+      "scope": "Sensitive_Struct_SmContext",
+      "target_var": "SmContext",
+      "target_files": ["internal/context/sm_context.go:15"],
+      "severity": "critical",
+      "business_risk": "SM context struct，SM上下文包含完整会话和隧道信息",
+      "contains_sensitive": ["PDUSession", "TEID", "UE_IP"],
+      "expected_sanitizers": ["ValidateSessionOwnership", "LockBeforeModify"],
+      "audit_focus": "Verify SmContext struct has proper mutex protection, lifecycle cleanup, and no direct serialization"
+    },
+    {
+      "scope": "Compliance_Gap_PFCP-003",
+      "check_id": "PFCP-003",
+      "severity": "critical",
+      "business_risk": "3GPP规范合规缺失: PFCP session operations shall be authorized by the controlling function",
+      "category": "pfcp_security",
+      "audit_focus": "Verify if PFCP session operations shall be authorized by the controlling function is implemented, possibly in a different code path"
+    },
+    {
+      "scope": "Compliance_Gap_SBI-002",
+      "check_id": "SBI-002",
+      "severity": "critical",
+      "business_risk": "3GPP规范合规缺失: OAuth 2.0 based authorization shall be supported for NF service access",
+      "category": "sbi_security",
+      "audit_focus": "Verify if OAuth 2.0 based authorization shall be supported for NF service access is implemented, possibly in a different code path"
+    },
+    {
+      "scope": "Insecure_Pattern_INSEC-001",
+      "check_id": "INSEC-001",
+      "severity": "critical",
+      "business_risk": "TLS certificate verification disabled",
+      "target_files": ["internal/sbi/client.go:34"],
+      "occurrence_count": 1,
+      "audit_focus": "Remove InsecureSkipVerify or set to false in production code",
+      "expected_sanitizers": ["Remove InsecureSkipVerify or set to false in production code"]
+    }
+  ]
 }

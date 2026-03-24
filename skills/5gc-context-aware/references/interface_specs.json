@@ -207,15 +207,15 @@
       "encoding": "ASN.1 APER",
       "go_packages": ["ngap", "aper", "ngap_message"],
       "critical_procedures": [
-        {"name": "InitialUEMessage", "security": "Contains NAS-PDU, potentially unprotected"},
-        {"name": "DownlinkNASTransport", "security": "Carries NAS messages to UE"},
-        {"name": "UplinkNASTransport", "security": "Carries NAS messages from UE"},
-        {"name": "HandoverRequired", "security": "Initiates handover, verify source cell"},
-        {"name": "HandoverRequest", "security": "Target AMF handover, verify security context transfer"},
-        {"name": "PathSwitchRequest", "security": "Xn handover completion, verify source"},
-        {"name": "NGSetupRequest", "security": "RAN node registration, validate identity"},
-        {"name": "UEContextReleaseCommand", "security": "UE context teardown"},
-        {"name": "InitialContextSetupRequest", "security": "Sends security keys to gNB"}
+        {"name": "InitialUEMessage", "security": "Contains NAS-PDU, potentially unprotected", "business_risk": "未保护的NAS-PDU可被篡改注入恶意NAS消息", "taint_sources": ["pdu.NAS_PDU", "pdu.UserLocationInformation"], "expected_sanitizers": ["ValidateNASPDU", "CheckRanNodeId"]},
+        {"name": "DownlinkNASTransport", "security": "Carries NAS messages to UE", "business_risk": "下行NAS传输可被利用向UE注入恶意信令", "taint_sources": ["nasMsg.Payload", "amfUeNgapId"], "expected_sanitizers": ["VerifyUEContext", "ApplyNASSecurity"]},
+        {"name": "UplinkNASTransport", "security": "Carries NAS messages from UE", "business_risk": "上行NAS消息可包含伪造的UE身份或鉴权信息", "taint_sources": ["nasMsg.Payload", "ranUeNgapId"], "expected_sanitizers": ["DecodeAndVerifyNAS", "CheckNASIntegrity"]},
+        {"name": "HandoverRequired", "security": "Initiates handover, verify source cell", "business_risk": "伪造切换请求可导致UE被劫持到恶意基站", "taint_sources": ["targetID", "sourceToTargetContainer"], "expected_sanitizers": ["ValidateSourceCell", "CheckHandoverAuth"]},
+        {"name": "HandoverRequest", "security": "Target AMF handover, verify security context transfer", "business_risk": "切换请求中安全上下文传递不当导致密钥泄露", "taint_sources": ["securityContext", "pduSessionList"], "expected_sanitizers": ["ValidateSecurityContextTransfer", "VerifySourceAMF"]},
+        {"name": "PathSwitchRequest", "security": "Xn handover completion, verify source", "business_risk": "路径切换请求可被利用重定向用户面流量", "taint_sources": ["userLocationInfo", "pduSessionList"], "expected_sanitizers": ["VerifyPathSwitchSource", "ValidateSecurityContext"]},
+        {"name": "NGSetupRequest", "security": "RAN node registration, validate identity", "business_risk": "伪造gNB注册可将恶意基站接入核心网", "taint_sources": ["globalRANNodeID", "supportedTAList"], "expected_sanitizers": ["ValidateRANNodeIdentity", "CheckAllowedTAList"]},
+        {"name": "UEContextReleaseCommand", "security": "UE context teardown", "business_risk": "伪造上下文释放可强制断开合法用户连接(DoS)", "taint_sources": ["ueNgapIdPair", "cause"], "expected_sanitizers": ["VerifyReleaseAuthority", "ValidateUEContextState"]},
+        {"name": "InitialContextSetupRequest", "security": "Sends security keys to gNB", "business_risk": "安全密钥下发过程中泄露可导致空口加密被破解", "taint_sources": ["securityKey", "nasPdu"], "expected_sanitizers": ["EncryptSecurityKeyTransfer", "ValidateTargetGNB"]}
       ]
     },
     "NAS-5G": {
@@ -223,13 +223,13 @@
       "encoding": "Custom binary (TLV)",
       "go_packages": ["nas", "nasMessage", "nasType", "nas_security"],
       "critical_procedures": [
-        {"name": "RegistrationRequest", "security": "May contain plain SUCI, initial message"},
-        {"name": "AuthenticationResponse", "security": "Contains RES* for verification"},
-        {"name": "SecurityModeComplete", "security": "Confirms security algorithms"},
-        {"name": "DeregistrationRequest", "security": "Must be integrity protected"},
-        {"name": "ServiceRequest", "security": "Must be integrity protected"},
-        {"name": "PDUSessionEstablishmentRequest", "security": "Triggers session creation"},
-        {"name": "IdentityResponse", "security": "May reveal SUPI if not concealed"}
+        {"name": "RegistrationRequest", "security": "May contain plain SUCI, initial message", "business_risk": "注册请求包含SUCI，处理不当可泄露用户身份", "taint_sources": ["mobileIdentity", "nasKeySetIdentifier", "uplinkDataStatus"], "expected_sanitizers": ["ValidateSUCI", "CheckRegistrationType"]},
+        {"name": "AuthenticationResponse", "security": "Contains RES* for verification", "business_risk": "鉴权响应RES*比较不当可导致时序攻击绕过认证", "taint_sources": ["authResponseParam.RES", "eapMessage"], "expected_sanitizers": ["ConstantTimeCompare", "ValidateRESFormat"]},
+        {"name": "SecurityModeComplete", "security": "Confirms security algorithms", "business_risk": "安全模式完成消息被篡改可导致加密/完整性算法降级", "taint_sources": ["nasMessageContainer", "imeisv"], "expected_sanitizers": ["VerifyNASMAC", "ValidateAlgorithmSelection"]},
+        {"name": "DeregistrationRequest", "security": "Must be integrity protected", "business_risk": "伪造去注册请求可强制用户断开网络连接", "taint_sources": ["deregistrationType", "ngksi"], "expected_sanitizers": ["CheckNASIntegrity", "VerifyDeregAuth"]},
+        {"name": "ServiceRequest", "security": "Must be integrity protected", "business_risk": "伪造服务请求可触发非法寻呼或唤醒攻击", "taint_sources": ["serviceType", "nasKeySetIdentifier"], "expected_sanitizers": ["CheckNASIntegrity", "ValidateServiceType"]},
+        {"name": "PDUSessionEstablishmentRequest", "security": "Triggers session creation", "business_risk": "伪造PDU会话请求可非法建立数据连接消耗网络资源", "taint_sources": ["pduSessionId", "requestType", "sNssai", "dnn"], "expected_sanitizers": ["ValidatePDUSessionAuth", "CheckDNNSubscription"]},
+        {"name": "IdentityResponse", "security": "May reveal SUPI if not concealed", "business_risk": "身份响应中SUPI未加密直接暴露用户永久标识", "taint_sources": ["mobileIdentity", "identityType"], "expected_sanitizers": ["EnforceSUCIConcealment", "RejectPlainSUPI"]}
       ]
     },
     "PFCP": {
@@ -237,11 +237,11 @@
       "encoding": "Custom binary (TLV)",
       "go_packages": ["pfcp", "pfcpType", "pfcp_message"],
       "critical_procedures": [
-        {"name": "AssociationSetupRequest", "security": "SMF-UPF association, validate identity"},
-        {"name": "SessionEstablishmentRequest", "security": "Creates forwarding rules"},
-        {"name": "SessionModificationRequest", "security": "Modifies forwarding rules"},
-        {"name": "SessionDeletionRequest", "security": "Removes session rules"},
-        {"name": "HeartbeatRequest", "security": "Keepalive, check association state"}
+        {"name": "AssociationSetupRequest", "security": "SMF-UPF association, validate identity", "business_risk": "PFCP关联建立未验证身份可允许恶意节点接管UPF控制", "taint_sources": ["msg.NodeID", "msg.RecoveryTimestamp"], "expected_sanitizers": ["ValidateNodeIdentity", "CheckAssociationAuth"]},
+        {"name": "SessionEstablishmentRequest", "security": "Creates forwarding rules", "business_risk": "非法PFCP会话建立可创建恶意转发规则劫持用户流量", "taint_sources": ["msg.CreatePDR", "msg.CreateFAR", "msg.CreateQER", "msg.SEID"], "expected_sanitizers": ["VerifyAssociationState", "ValidateRuleConsistency"]},
+        {"name": "SessionModificationRequest", "security": "Modifies forwarding rules", "business_risk": "PFCP会话修改可篡改现有转发规则重定向用户数据", "taint_sources": ["msg.UpdatePDR", "msg.UpdateFAR", "msg.RemovePDR"], "expected_sanitizers": ["CheckSessionOwnership", "ValidateModification"]},
+        {"name": "SessionDeletionRequest", "security": "Removes session rules", "business_risk": "非法PFCP会话删除可中断用户数据面服务", "taint_sources": ["msg.SEID", "header.SequenceNumber"], "expected_sanitizers": ["VerifyDeletionAuth", "CheckSessionState"]},
+        {"name": "HeartbeatRequest", "security": "Keepalive, check association state", "business_risk": "心跳消息伪造可操纵关联状态触发异常恢复流程", "taint_sources": ["msg.RecoveryTimestamp"], "expected_sanitizers": ["ValidateHeartbeatSource", "CheckTimestampConsistency"]}
       ]
     },
     "GTP-U": {
@@ -249,9 +249,9 @@
       "encoding": "Custom binary",
       "go_packages": ["gtp", "gtpv1", "gtpv1u"],
       "critical_procedures": [
-        {"name": "T-PDU", "security": "User data packet, validate TEID"},
-        {"name": "EchoRequest", "security": "Path management"},
-        {"name": "ErrorIndication", "security": "May cause session teardown"}
+        {"name": "T-PDU", "security": "User data packet, validate TEID", "business_risk": "GTP-U数据包TEID未验证可导致数据注入或窃取", "taint_sources": ["packet.TEID", "packet.Payload", "packet.SrcIP"], "expected_sanitizers": ["ValidateTEID", "CheckSourceIP"]},
+        {"name": "EchoRequest", "security": "Path management", "business_risk": "伪造Echo请求可探测GTP路径状态用于后续攻击", "taint_sources": ["msg.RemoteAddr"], "expected_sanitizers": ["ValidateEchoSource"]},
+        {"name": "ErrorIndication", "security": "May cause session teardown", "business_risk": "伪造错误指示可强制拆除GTP隧道中断用户服务", "taint_sources": ["msg.TEID", "msg.GTPUPeerAddress"], "expected_sanitizers": ["ValidateErrorSource", "RateLimitErrorHandling"]}
       ]
     }
   },

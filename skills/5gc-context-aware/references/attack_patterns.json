@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": "1.0.0",
-    "description": "5GC NF-specific attack patterns and vulnerability categories for directed code audit",
+    "version": "2.0.0",
+    "description": "5GC NF-specific attack patterns with business risk context, taint sources, and expected sanitizers for go-audit integration",
     "spec_reference": "3GPP TS 33.501, ENISA 5G Security, GSMA FS.40"
   },
   "common_patterns": [
@@ -10,8 +10,12 @@
       "name": "Insufficient Input Validation on NAS/NGAP Messages",
       "severity": "critical",
       "description": "Binary protocol messages (NAS, NGAP, PFCP) parsed without proper length/bounds checking can lead to buffer overflows or panics",
+      "business_risk": "协议消息解析越界导致核心网组件崩溃(DoS)或远程代码执行",
       "cwe": ["CWE-120", "CWE-125", "CWE-787"],
+      "scope": "Protocol_Message_Parser",
       "detection_hints": ["aper.Unmarshal", "nas.Decode", "pfcp.Decode", "binary.Read", "bytes.NewBuffer"],
+      "taint_sources": ["rawData", "nasPdu", "pfcpMsg", "ngapPdu", "msg.Payload"],
+      "expected_sanitizers": ["ValidateMessageLength", "CheckIEBounds", "VerifyMandatoryIEs"],
       "audit_focus": "Check all Unmarshal/Decode calls for error handling and length validation before accessing decoded fields"
     },
     {
@@ -19,8 +23,12 @@
       "name": "Missing Authentication on SBI Endpoints",
       "severity": "critical",
       "description": "HTTP/2 SBI endpoints exposed without OAuth2 token verification or mutual TLS validation",
+      "business_risk": "SBI接口未鉴权导致任意NF可冒充合法请求者访问核心网服务",
       "cwe": ["CWE-306", "CWE-862"],
+      "scope": "SBI_Auth_Middleware",
       "detection_hints": ["gin.Default()", "router.Group", "HandleFunc", "NoAuth", "skipAuth"],
+      "taint_sources": ["c.Request.Header", "c.GetHeader(\"Authorization\")", "c.Request.TLS"],
+      "expected_sanitizers": ["VerifyAccessToken", "ValidateOAuth2Token", "CheckClientCertificate", "AuthMiddleware"],
       "audit_focus": "Verify every SBI route group has middleware enforcing access token validation per TS 33.501 Section 13.3"
     },
     {
@@ -28,8 +36,12 @@
       "name": "Sensitive Data Exposure in Logs",
       "severity": "high",
       "description": "SUPI, IMSI, authentication vectors, or encryption keys logged in plaintext",
+      "business_risk": "用户永久标识(SUPI/IMSI)及密钥材料泄露至日志系统，可被运维人员或攻击者利用进行用户追踪和通信窃听",
       "cwe": ["CWE-532", "CWE-200"],
+      "scope": "Log_Data_Sanitization",
       "detection_hints": ["log.Info", "log.Debug", "log.Trace", "fmt.Printf", "logger.Sugar()"],
+      "taint_sources": ["ue.Supi", "ue.Guti", "authCtx.Kausf", "secCtx.KnasEnc", "av.XRES"],
+      "expected_sanitizers": ["MaskSUPI", "RedactSensitiveFields", "SanitizeLogOutput"],
       "audit_focus": "Search for logging statements that include SUPI, IMSI, SUCI, keys, or authentication vectors"
     },
     {
@@ -37,8 +49,12 @@
       "name": "Race Condition in UE Context Access",
       "severity": "high",
       "description": "Concurrent access to UE context structures without proper synchronization",
+      "business_risk": "UE上下文并发读写导致安全上下文混淆，可能使攻击者获取其他用户的会话密钥",
       "cwe": ["CWE-362", "CWE-667"],
+      "scope": "UE_Context_Concurrency",
       "detection_hints": ["sync.RWMutex", "context.Store", "RanUe", "AmfUe", "SmfUe"],
+      "taint_sources": ["ue.SecurityContext", "ue.Supi", "smContext.PduSessionId"],
+      "expected_sanitizers": ["Lock", "RLock", "sync.Mutex", "atomic.Load", "context.WithCancel"],
       "audit_focus": "Check if UE context load/store operations use proper mutex locking, especially in NGAP/NAS handler goroutines"
     },
     {
@@ -46,8 +62,12 @@
       "name": "Insecure TLS Configuration",
       "severity": "high",
       "description": "SBI endpoints using weak TLS versions, cipher suites, or disabled certificate verification",
+      "business_risk": "弱TLS配置使核心网组件间通信可被中间人攻击窃听或篡改",
       "cwe": ["CWE-326", "CWE-295"],
+      "scope": "TLS_Configuration",
       "detection_hints": ["tls.Config", "InsecureSkipVerify", "MinVersion", "CipherSuites"],
+      "taint_sources": ["tlsConfig.InsecureSkipVerify", "tlsConfig.MinVersion", "tlsConfig.CipherSuites"],
+      "expected_sanitizers": ["EnforceTLS12Minimum", "ValidateCipherSuites", "RequireClientCert"],
       "audit_focus": "Verify TLS 1.2+ minimum, strong cipher suites, and no InsecureSkipVerify in production paths"
     },
     {
@@ -55,8 +75,12 @@
       "name": "Integer Overflow in Protocol Length Fields",
       "severity": "high",
       "description": "Length fields in protocol messages used for memory allocation without overflow checks",
+      "business_risk": "协议长度字段整数溢出导致堆内存破坏，可能实现远程代码执行",
       "cwe": ["CWE-190", "CWE-680"],
+      "scope": "Protocol_Length_Validation",
       "detection_hints": ["make([]byte", "make([]uint8", "int(length)", "uint16(", "uint32("],
+      "taint_sources": ["msg.Length", "ie.Length", "header.PayloadLength", "tlv.Length"],
+      "expected_sanitizers": ["CheckMaxLength", "ValidateLengthBounds", "SafeMakeSlice"],
       "audit_focus": "Verify all length-based allocations from protocol messages are bounds-checked"
     },
     {
@@ -64,8 +88,12 @@
       "name": "Denial of Service via Resource Exhaustion",
       "severity": "high",
       "description": "Unbounded goroutine spawning, channel fills, or memory allocation based on untrusted input",
+      "business_risk": "恶意信令洪泛导致核心网资源耗尽，影响所有用户的网络接入和会话服务",
       "cwe": ["CWE-400", "CWE-770"],
+      "scope": "Resource_Exhaustion_Control",
       "detection_hints": ["go func()", "make(chan", "append(", "NewTicker", "time.After"],
+      "taint_sources": ["incomingMsg", "conn.RemoteAddr", "requestCount"],
+      "expected_sanitizers": ["RateLimiter", "MaxConnectionLimit", "ContextWithTimeout", "semaphore.Acquire"],
       "audit_focus": "Check for rate limiting, connection limits, and bounded resource allocation in message handlers"
     }
   ],
@@ -76,8 +104,12 @@
         "name": "NAS Security Mode Command Bypass",
         "severity": "critical",
         "description": "NAS messages accepted without completed security mode control procedure",
+        "business_risk": "NAS安全模式控制绕过，攻击者可发送未加密/未完整性保护的NAS消息操纵UE注册和会话",
         "cwe": ["CWE-287", "CWE-757"],
+        "scope": "NAS_Security_Mode_Control",
         "detection_hints": ["SecurityModeComplete", "NASSecurityMode", "securityContext", "CipheredNAS"],
+        "taint_sources": ["nasMsg.SecurityHeader", "ue.SecurityContextAvailable", "ue.NASCount"],
+        "expected_sanitizers": ["CheckSecurityModeComplete", "VerifyNASSecurityContext", "IsSecurityContextActive"],
         "audit_focus": "Verify NAS message handlers check security context is established before processing protected messages",
         "spec_reference": "TS 33.501 Section 6.7.2"
       },
@@ -86,8 +118,12 @@
         "name": "NGAP Message Injection via Malformed IE",
         "severity": "critical",
         "description": "NGAP protocol message with crafted Information Elements causing unexpected behavior",
+        "business_risk": "恶意gNB通过构造畸形NGAP IE注入非法信令，可导致AMF状态机混乱或任意UE上下文操纵",
         "cwe": ["CWE-20", "CWE-74"],
+        "scope": "NGAP_IE_Validation",
         "detection_hints": ["ngap_message", "InitialUEMessage", "HandoverRequest", "PathSwitchRequest"],
+        "taint_sources": ["pdu.InitiatingMessage", "ie.Value", "ngapMsg.ProtocolIEs"],
+        "expected_sanitizers": ["ValidateNGAPIEs", "CheckMandatoryIEs", "ValidateIEValueRange"],
         "audit_focus": "Check NGAP IE parsing for proper validation of mandatory/optional IEs and value ranges"
       },
       {
@@ -95,8 +131,12 @@
         "name": "SUCI Concealment Bypass",
         "severity": "critical",
         "description": "SUPI derivation from SUCI without proper null-scheme detection or protection scheme validation",
+        "business_risk": "SUCI隐私保护机制被绕过，攻击者可获取用户永久标识SUPI进行位置追踪和身份关联",
         "cwe": ["CWE-311", "CWE-327"],
+        "scope": "SUCI_Privacy_Protection",
         "detection_hints": ["SUCI", "SUPI", "DeconcealdSuci", "NullScheme", "ProfileA", "ProfileB"],
+        "taint_sources": ["mobileIdentity.SUCI", "suciProfile.ProtectionScheme", "suciProfile.PublicKey"],
+        "expected_sanitizers": ["ValidateSUCIProtectionScheme", "RejectNullScheme", "VerifyECIESParams"],
         "audit_focus": "Verify SUCI-to-SUPI resolution enforces encryption scheme and rejects null-scheme in production",
         "spec_reference": "TS 33.501 Section 6.12"
       },
@@ -105,8 +145,12 @@
         "name": "Unauthorized Inter-AMF Handover",
         "severity": "high",
         "description": "UE context transfer between AMFs without proper source AMF authentication",
+        "business_risk": "伪造AMF间切换请求窃取UE安全上下文，可实现对目标用户的中间人攻击",
         "cwe": ["CWE-346"],
+        "scope": "Inter_AMF_Handover",
         "detection_hints": ["UEContextTransfer", "N14", "CreateUEContext", "HandoverRequired"],
+        "taint_sources": ["request.SourceAMF", "ueContext.SecurityContext", "transferMsg.N14Payload"],
+        "expected_sanitizers": ["ValidateSourceAMFIdentity", "VerifyN14TLSCert", "CheckUEContextOwnership"],
         "audit_focus": "Verify source AMF identity is validated during UE context transfer"
       },
       {
@@ -114,8 +158,12 @@
         "name": "Registration Request Replay",
         "severity": "high",
         "description": "Registration requests accepted without checking freshness (e.g., via uplink NAS count)",
+        "business_risk": "注册请求重放攻击导致合法UE被去注册，或攻击者冒充已注册UE获取网络服务",
         "cwe": ["CWE-294"],
+        "scope": "NAS_Anti_Replay",
         "detection_hints": ["RegistrationRequest", "NASCount", "sqn", "FreshSecurityContext"],
+        "taint_sources": ["nasMsg.SequenceNumber", "ue.UplinkCount", "registrationRequest.5GMM"],
+        "expected_sanitizers": ["CheckNASCount", "VerifyMessageFreshness", "ValidateUplinkCount"],
         "audit_focus": "Check if NAS uplink count or anti-replay mechanisms are enforced on registration"
       }
     ],
@@ -125,8 +173,12 @@
         "name": "Unauthorized PDU Session Establishment",
         "severity": "critical",
         "description": "PDU session creation without proper subscription/authorization checks",
+        "business_risk": "未经授权的PDU会话建立，攻击者可绕过签约数据检查非法使用网络数据服务或接入未授权DNN",
         "cwe": ["CWE-862", "CWE-285"],
+        "scope": "PDU_Session_Authorization",
         "detection_hints": ["CreateSMContext", "PDUSessionEstablishment", "DNN", "SNSSAI", "subscribedData"],
+        "taint_sources": ["request.DNN", "request.SNssai", "request.Supi", "smContext.PDUSessionID"],
+        "expected_sanitizers": ["ValidateDNNAuthorization", "CheckSNSSAISubscription", "VerifySubscriberData"],
         "audit_focus": "Verify DNN/S-NSSAI authorization checks against subscription data before session establishment",
         "spec_reference": "TS 33.501 Section 6.6"
       },
@@ -135,8 +187,12 @@
         "name": "PFCP Session Hijacking",
         "severity": "critical",
         "description": "PFCP association or session modification messages accepted from unauthorized sources",
+        "business_risk": "PFCP会话劫持，攻击者伪造SMF向UPF发送PFCP消息篡改转发规则，实现用户流量重定向或窃听",
         "cwe": ["CWE-346", "CWE-290"],
+        "scope": "N4_Interface_Handler",
         "detection_hints": ["PFCPSessionEstablishment", "PFCPSessionModification", "PFCPAssociation", "NodeID"],
+        "taint_sources": ["msg.NodeID", "msg.SEID", "msg.EntityID", "msg.RemoteF_TEID"],
+        "expected_sanitizers": ["ValidateUPFIdentity", "CheckNodeAssociation", "VerifyPFCPSource", "ValidateSEID"],
         "audit_focus": "Check PFCP message source validation and session ownership verification"
       },
       {
@@ -144,8 +200,12 @@
         "name": "GTP Tunnel Endpoint Manipulation",
         "severity": "high",
         "description": "TEID assignment or F-TEID manipulation allowing traffic redirection",
+        "business_risk": "GTP隧道端点篡改导致用户数据面流量被重定向到攻击者控制的节点，实现数据窃取",
         "cwe": ["CWE-471"],
+        "scope": "N4_TEID_Management",
         "detection_hints": ["TEID", "F-TEID", "CreatePDR", "CreateFAR", "OuterHeaderCreation"],
+        "taint_sources": ["pdr.FTEID", "far.OuterHeaderCreation", "request.TEID", "fteid.IPv4Address"],
+        "expected_sanitizers": ["ValidateTEIDUniqueness", "CheckFTEIDOwnership", "VerifyTunnelEndpoint"],
         "audit_focus": "Verify TEID uniqueness and validate F-TEID references during PDR/FAR creation"
       },
       {
@@ -153,8 +213,12 @@
         "name": "QoS Policy Bypass",
         "severity": "medium",
         "description": "QoS flow rules that can be manipulated to bypass bandwidth/priority controls",
+        "business_risk": "QoS策略绕过使攻击者获得超出签约的带宽和优先级，影响其他用户服务质量",
         "cwe": ["CWE-863"],
+        "scope": "N7_QoS_Policy_Enforcement",
         "detection_hints": ["QFI", "QoSRules", "QER", "GBR", "MBR", "SessionAMBR"],
+        "taint_sources": ["pccRule.QoSData", "qer.MBR", "qer.GBR", "smPolicy.SessionAMBR"],
+        "expected_sanitizers": ["ValidateQoSAgainstPolicy", "EnforceSessionAMBR", "CheckPCFDecision"],
         "audit_focus": "Verify QoS parameters are validated against policy decisions from PCF"
       }
     ],
@@ -164,8 +228,12 @@
         "name": "GTP-U Packet Injection",
         "severity": "critical",
         "description": "GTP-U data plane packets accepted without proper tunnel endpoint validation",
+        "business_risk": "GTP-U数据包注入绕过PDR规则，攻击者可向用户面注入恶意流量或窃取合法用户数据",
         "cwe": ["CWE-346", "CWE-20"],
+        "scope": "N3_GTP_Tunnel_Validation",
         "detection_hints": ["GTPv1U", "TEID", "ExtensionHeader", "PDUSessionContainer"],
+        "taint_sources": ["packet.TEID", "packet.SrcIP", "gtpHeader.ExtensionHeaders", "packet.Payload"],
+        "expected_sanitizers": ["ValidateTEIDAgainstPDR", "CheckSourceIPWhitelist", "VerifyGTPExtHeaders"],
         "audit_focus": "Verify GTP-U packet TEID matches established PDR rules and source IP validation"
       },
       {
@@ -173,8 +241,12 @@
         "name": "PFCP Rule Manipulation",
         "severity": "critical",
         "description": "PDR/FAR/QER rules created or modified without proper SMF authorization",
+        "business_risk": "未授权PFCP规则修改，攻击者可篡改UPF转发规则实现流量劫持、计费绕过",
         "cwe": ["CWE-862"],
+        "scope": "N4_PFCP_Rule_Authorization",
         "detection_hints": ["CreatePDR", "CreateFAR", "CreateQER", "UpdatePDR", "DeletePDR"],
+        "taint_sources": ["msg.CreatePDR", "msg.CreateFAR", "msg.CreateQER", "msg.SEID"],
+        "expected_sanitizers": ["VerifyPFCPAssociation", "CheckSessionOwnership", "ValidateSMFIdentity"],
         "audit_focus": "Verify PFCP association state and session ownership before accepting rule modifications"
       },
       {
@@ -182,8 +254,12 @@
         "name": "Data Plane Traffic Leak via Incorrect FAR",
         "severity": "critical",
         "description": "Forwarding Action Rules misconfigured to redirect user traffic to attacker-controlled endpoints",
+        "business_risk": "FAR转发规则配置错误导致用户数据面流量泄露至非法目的地，造成大规模数据泄露",
         "cwe": ["CWE-441"],
+        "scope": "N4_FAR_Destination_Validation",
         "detection_hints": ["ForwardingParameters", "OuterHeaderCreation", "DestinationInterface", "RedirectInformation"],
+        "taint_sources": ["far.ForwardingParameters", "far.OuterHeaderCreation.IPv4", "far.RedirectInfo"],
+        "expected_sanitizers": ["ValidateFARDestination", "CheckOuterHeaderTarget", "RejectUnauthorizedRedirect"],
         "audit_focus": "Audit FAR destination validation logic and redirect information handling"
       },
       {
@@ -191,8 +267,12 @@
         "name": "Kernel/eBPF Bypass in Fast Path",
         "severity": "high",
         "description": "UPF fast path implementations using kernel bypass may skip security controls",
+        "business_risk": "内核旁路快速路径跳过安全检查，导致PDR/FAR规则不被执行，用户流量未经过滤直接转发",
         "cwe": ["CWE-693"],
+        "scope": "UPF_Fast_Path_Security",
         "detection_hints": ["XDP", "eBPF", "DPDK", "AF_XDP", "bpf_redirect"],
+        "taint_sources": ["xdpPacket.Data", "dpdkMbuf.Data", "bpfCtx.data"],
+        "expected_sanitizers": ["EnforcePDRInFastPath", "SyncFastPathRules", "ValidatePacketInFastPath"],
         "audit_focus": "Verify that kernel-bypass fast paths enforce the same PDR/FAR rules as the slow path"
       }
     ],
@@ -202,8 +282,12 @@
         "name": "5G-AKA Authentication Vector Leak",
         "severity": "critical",
         "description": "Authentication vectors (RAND, AUTN, XRES*) exposed or cached insecurely",
+        "business_risk": "鉴权向量(RAND/AUTN/XRES*)泄露使攻击者可伪造鉴权响应冒充合法UE接入网络",
         "cwe": ["CWE-312", "CWE-316"],
+        "scope": "AV_Storage_Security",
         "detection_hints": ["AuthenticationVector", "RAND", "AUTN", "XRES", "HXRES", "Kausf"],
+        "taint_sources": ["av.RAND", "av.AUTN", "av.XresStar", "av.HxresStar", "av.Kausf"],
+        "expected_sanitizers": ["SecureAVStorage", "ClearAVAfterUse", "PreventAVLogging", "ZeroizeKeyMaterial"],
         "audit_focus": "Verify AV storage is memory-only with proper cleanup and no logging of sensitive fields",
         "spec_reference": "TS 33.501 Section 6.1"
       },
@@ -212,8 +296,12 @@
         "name": "EAP-AKA' State Machine Bypass",
         "severity": "critical",
         "description": "EAP-AKA' authentication state machine accepts out-of-sequence messages",
+        "business_risk": "EAP-AKA'状态机绕过使攻击者跳过鉴权挑战步骤直接获取认证成功，非法接入核心网",
         "cwe": ["CWE-287", "CWE-841"],
+        "scope": "EAP_State_Machine",
         "detection_hints": ["EapAkaPrime", "EAP-Response", "EAP-Success", "authCtx.State"],
+        "taint_sources": ["eapMsg.Type", "eapMsg.Code", "authCtx.CurrentState", "eapPayload.Data"],
+        "expected_sanitizers": ["ValidateEAPStateTransition", "RejectOutOfSequenceEAP", "CheckEAPMessageType"],
         "audit_focus": "Verify strict state machine transitions and rejection of unexpected EAP message types"
       },
       {
@@ -221,8 +309,12 @@
         "name": "SQN Synchronization Failure Exploitation",
         "severity": "high",
         "description": "Sequence number resynchronization mechanism exploitable for DoS or replay",
+        "business_risk": "序列号同步失败被利用发起重放攻击或DoS，导致合法UE无法完成鉴权",
         "cwe": ["CWE-330"],
+        "scope": "SQN_Resync_Handler",
         "detection_hints": ["SQN", "AUTS", "Resynchronization", "MacFailure"],
+        "taint_sources": ["authInfo.AUTS", "authInfo.SQN", "resyncRequest.RAND"],
+        "expected_sanitizers": ["RateLimitResync", "ValidateAUTS", "CheckResyncFrequency"],
         "audit_focus": "Check SQN resync rate limiting and validation of AUTS parameters"
       }
     ],
@@ -232,8 +324,12 @@
         "name": "NF Profile Spoofing",
         "severity": "critical",
         "description": "Unauthorized NF registration or profile update allowing service impersonation",
+        "business_risk": "NF身份伪造使攻击者注册恶意NF实例冒充合法AMF/SMF，劫持所有经过NRF发现的服务请求",
         "cwe": ["CWE-290"],
+        "scope": "NF_Registration_Auth",
         "detection_hints": ["NFRegister", "NFUpdate", "NFProfile", "nfInstanceId", "nfType"],
+        "taint_sources": ["nfProfile.NfType", "nfProfile.NfInstanceId", "nfProfile.Ipv4Addresses", "request.TLSCert"],
+        "expected_sanitizers": ["ValidateNFIdentityAgainstCert", "CheckNFTypeAuthorization", "VerifyTLSClientDN"],
         "audit_focus": "Verify NF registration validates identity claims against TLS client certificate",
         "spec_reference": "TS 33.501 Section 13.3.1"
       },
@@ -242,8 +338,12 @@
         "name": "Service Discovery Information Leak",
         "severity": "high",
         "description": "NF discovery endpoint returns excessive information about network topology",
+        "business_risk": "NF发现接口过度暴露网络拓扑信息，攻击者可获取所有NF的IP地址和服务端口用于后续攻击",
         "cwe": ["CWE-200"],
+        "scope": "NF_Discovery_Scope",
         "detection_hints": ["NFDiscover", "SearchNFInstances", "nfProfile", "ipv4Addresses"],
+        "taint_sources": ["discoveryResponse.NfInstances", "nfProfile.Ipv4Addresses", "nfProfile.NfServices"],
+        "expected_sanitizers": ["FilterDiscoveryByScope", "CheckRequesterAuthorization", "RedactSensitiveNFInfo"],
         "audit_focus": "Check if discovery responses are filtered based on requester authorization scope"
       },
       {
@@ -251,8 +351,12 @@
         "name": "OAuth2 Token Scope Bypass",
         "severity": "critical",
         "description": "Access tokens issued with overly broad scope or without proper client authentication",
+        "business_risk": "OAuth2令牌权限过大使单个被攻陷NF可访问全部核心网服务，扩大攻击影响面",
         "cwe": ["CWE-269", "CWE-863"],
+        "scope": "OAuth2_Token_Issuance",
         "detection_hints": ["AccessToken", "TokenRequest", "scope", "nfType", "Claims"],
+        "taint_sources": ["tokenRequest.Scope", "tokenRequest.NfType", "claims.AllowedNfTypes"],
+        "expected_sanitizers": ["ValidateTokenScope", "EnforceMinimalPrivilege", "CheckNFTypeScope"],
         "audit_focus": "Verify token scope validation and NF type-based access control",
         "spec_reference": "TS 33.501 Section 13.4"
       }
@@ -263,8 +367,12 @@
         "name": "Subscriber Data Unauthorized Access",
         "severity": "critical",
         "description": "Subscription data retrieved or modified without proper authorization checks",
+        "business_risk": "订阅数据未授权访问，攻击者可读取/篡改任意用户的签约信息、DNN权限和切片配置",
         "cwe": ["CWE-862", "CWE-639"],
+        "scope": "SBI_Subscriber_Data_Access",
         "detection_hints": ["GetSubscriberData", "ModifySubscription", "SUPI", "subscribedData"],
+        "taint_sources": ["request.Supi", "request.SubscribedData", "pathParam.supi"],
+        "expected_sanitizers": ["VerifyRequesterNFAuthorization", "CheckSUPIAccessScope", "ValidateDataModification"],
         "audit_focus": "Verify requester NF authorization before returning or modifying subscriber data"
       },
       {
@@ -272,8 +380,12 @@
         "name": "Authentication Credential Exposure",
         "severity": "critical",
         "description": "Permanent keys (K) or derived keys exposed through UDM interfaces",
+        "business_risk": "USIM永久密钥(K/OPc)通过UDM接口泄露，攻击者可克隆SIM卡并永久冒充任意用户",
         "cwe": ["CWE-312"],
+        "scope": "SBI_Credential_Storage",
         "detection_hints": ["AuthenticationData", "permanentKey", "OPc", "GenerateAuthData"],
+        "taint_sources": ["UdmUeContext.AuthSubsData", "authSubs.PermanentKey", "authSubs.Opc", "authData.K"],
+        "expected_sanitizers": ["RestrictKeyToInternal", "DeriveVectorOnly", "PreventKeyExfiltration", "ZeroizeAfterDerivation"],
         "audit_focus": "Verify authentication data generation keeps permanent keys internal and only exposes derived vectors"
       }
     ],
@@ -283,8 +395,12 @@
         "name": "Policy Rule Injection",
         "severity": "high",
         "description": "Unauthorized creation or modification of SM policies allowing QoS abuse",
+        "business_risk": "策略规则注入使攻击者可为任意会话设置高优先级QoS，或绕过流量限制和访问控制",
         "cwe": ["CWE-862"],
+        "scope": "N7_SM_Policy_Control",
         "detection_hints": ["SmPolicyCreate", "SmPolicyUpdate", "PccRule", "AuthorizedQoS"],
+        "taint_sources": ["request.PccRules", "policyDecision.QoSData", "request.SubsData"],
+        "expected_sanitizers": ["ValidatePolicyRequester", "CheckSubscriberContext", "EnforcePolicyBounds"],
         "audit_focus": "Verify policy decisions are based on authenticated subscriber context and proper authorization"
       },
       {
@@ -292,8 +408,12 @@
         "name": "Charging Policy Bypass",
         "severity": "high",
         "description": "Manipulation of charging rules to avoid billing for data usage",
+        "business_risk": "计费策略绕过导致运营商计费损失，攻击者可无限量免费使用数据服务",
         "cwe": ["CWE-863"],
+        "scope": "Charging_Rule_Integrity",
         "detection_hints": ["ChargingData", "URR", "UsageReport", "RatingGroup"],
+        "taint_sources": ["chargingRule.RatingGroup", "usageReport.Volume", "urr.MeasurementMethod"],
+        "expected_sanitizers": ["ValidateChargingRuleIntegrity", "PreventURRBypass", "VerifyUsageReport"],
         "audit_focus": "Verify charging rules cannot be modified or bypassed through policy update requests"
       }
     ]

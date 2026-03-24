@@ -188,19 +188,93 @@ Checks the codebase against 3GPP TS 33.501 security requirements, organized by d
 
 ---
 
-## Output: Audit Manifest (审计导航清单)
+## Output: go-audit Integration Payload (审计导航清单)
 
-The final output is `audit_manifest.json`, a structured document containing:
+The primary output is a **go-audit integration payload** (`go_audit_payload.json`) with two top-level sections:
 
-1. **Service Profile**: NF type, interfaces, protocols, confidence score
-2. **Interface Map**: All SBI routes and protocol handlers with security annotations
-3. **Sensitive Assets**: Tagged variables with hotspot file rankings
-4. **Compliance Results**: Check-by-check results with critical gap highlights
-5. **Attack Pattern Correlations**: NF-specific vulnerability patterns matched to project context (cross-referenced with `references/attack_patterns.json`)
-6. **Taint Analysis Directives**: Specific source/sink pairs for downstream taint engines
-7. **Audit Priority Queue**: Ordered list of audit tasks, from critical compliance gaps to entry point reviews
+### `project_context` — 项目业务上下文
 
-See `examples/sample_manifest.json` for a complete example of AMF audit output.
+Provides the NF identity, critical interfaces, and overall security assessment:
+
+```json
+{
+  "project_context": {
+    "nf_type": "SMF",
+    "nf_full_name": "Session Management Function",
+    "go_module": "github.com/free5gc/smf",
+    "confidence": 97.5,
+    "critical_interfaces": ["N4", "N11", "N7"],
+    "protocols": ["PFCP", "HTTP/2", "GTP-U"],
+    "sbi_services": ["nsmf-pdusession", "nsmf-event-exposure"],
+    "security_level": "High",
+    "http_framework": "gin",
+    "stats": {
+      "sbi_routes": 12,
+      "security_critical_routes": 8,
+      "protocol_handlers": {"NGAP": 0, "NAS-5G": 0, "PFCP": 5, "GTP-U": 2},
+      "auth_middleware_count": 1,
+      "sensitive_assets_tagged": 85,
+      "compliance_rate": 65.0,
+      "critical_gaps": 3,
+      "insecure_patterns": 2
+    }
+  }
+}
+```
+
+`security_level` is automatically determined: `Critical` (compliance < 40%, > 3 critical gaps), `High`, `Medium`, or `Low`.
+
+### `audit_focus` — 定向审计清单
+
+An ordered array of audit tasks, each with `scope`, `business_risk` (Chinese), `taint_sources`, and `expected_sanitizers`. These items are derived from five sources:
+
+1. **NF-specific attack patterns** (from `references/attack_patterns.json`)
+2. **Protocol handler entry points** (NGAP, NAS, PFCP, GTP-U handlers discovered in code)
+3. **SBI route entry points** (security-critical HTTP endpoints)
+4. **Sensitive variable exposure** (grouped by asset category)
+5. **Compliance gaps** (missing 3GPP TS 33.501 controls)
+
+Each item in the array follows this structure:
+
+```json
+{
+  "scope": "N4_Interface_Handler",
+  "target_func": "HandlePFCPSessionEstablishmentRequest",
+  "target_files": ["internal/pfcp/handler.go:45"],
+  "severity": "critical",
+  "business_risk": "PFCP会话劫持，攻击者伪造SMF向UPF发送PFCP消息篡改转发规则，实现用户流量重定向或窃听",
+  "cwe": ["CWE-346", "CWE-290"],
+  "taint_sources": ["msg.NodeID", "msg.SEID", "msg.EntityID", "msg.RemoteF_TEID"],
+  "expected_sanitizers": ["ValidateUPFIdentity", "CheckNodeAssociation", "VerifyPFCPSource", "ValidateSEID"],
+  "audit_focus": "Check PFCP message source validation and session ownership verification",
+  "spec_reference": "TS 33.501 Section 9.3"
+}
+```
+
+**For sensitive data exposure items**, the format uses `target_var` instead of `target_func`:
+
+```json
+{
+  "scope": "SBI_Credential_Storage",
+  "target_var": "UdmUeContext.AuthSubsData, authSubs.PermanentKey",
+  "target_files": ["internal/context/udm_ue.go:12", "internal/sbi/producer/auth.go:88"],
+  "severity": "critical",
+  "business_risk": "密钥材料泄露可导致NAS消息解密、伪造完整性校验和用户通信窃听",
+  "taint_sinks": ["log_output", "http_response", "file_write", "database_write"],
+  "expected_sanitizers": ["ZeroizeKeyMaterial", "SecureKeyStore", "PreventKeyLogging", "UseHSM"],
+  "audit_focus": "Track data flow of cryptographic_keys variables to ensure no unauthorized exposure"
+}
+```
+
+### Full output example
+
+See `examples/sample_manifest.json` for a complete SMF audit output demonstrating all item types.
+
+### Output files
+
+The generator produces two files in the project directory:
+- `go_audit_payload.json` — The go-audit integration payload (printed to stdout as well)
+- `audit_manifest.json` — Full manifest including detailed step results for debugging
 
 ---
 
@@ -211,23 +285,50 @@ Read these files for detailed pattern definitions and to extend the skill's know
 | File | Contents | When to read |
 |------|---------|-------------|
 | `references/nf_signatures.json` | NF identification patterns (module names, config fields, init functions) | Extending NF detection for custom implementations |
-| `references/interface_specs.json` | SBI API paths, binary protocol procedures, router framework patterns | Understanding interface mapping logic |
-| `references/sensitive_assets.json` | Sensitive variable patterns by category with regex and spec references | Adding custom sensitive data patterns |
-| `references/attack_patterns.json` | Common + NF-specific attack patterns with CWE mappings | Understanding threat model for specific NF |
+| `references/interface_specs.json` | SBI API paths with `business_risk`/`taint_sources`/`expected_sanitizers`, protocol handler specs | Understanding interface mapping and risk context |
+| `references/sensitive_assets.json` | Sensitive variable patterns by category with `business_risk`, `taint_sinks`, `expected_sanitizers` | Adding custom sensitive data patterns |
+| `references/attack_patterns.json` | Common + NF-specific attack patterns with `business_risk`, `taint_sources`, `expected_sanitizers`, CWE mappings | Understanding threat model and taint analysis targets |
 | `references/3gpp_security_baseline.json` | TS 33.501 compliance checks organized by security domain | Understanding compliance check details |
-| `examples/sample_manifest.json` | Example audit manifest output for an AMF project | Understanding output format |
+| `examples/sample_manifest.json` | Example go-audit payload for an SMF project | Understanding the output format consumed by go-audit |
 
 ---
 
 ## Integration with Other Skills
 
+### Interaction Flow
+
+```
+go-audit (startup)
+  │
+  ├──[Input]──> 5GC-Context-Aware: scans project globally
+  │
+  ├──[Analysis]──> Identifies NF type (e.g., SMF)
+  │                Retrieves NF-specific attack patterns from go-vuln-lib
+  │
+  ├──[Enhancement]──> Correlates interfaces (N4, N11, N7)
+  │                   with historical CVEs from go-vuln-insight
+  │
+  └──[Output]──> go_audit_payload.json
+                   ├── project_context: NF identity + security_level
+                   └── audit_focus[]: scope + business_risk
+                                      + taint_sources + expected_sanitizers
+                         │
+                         ▼
+                 go-audit: directed taint analysis
+                   (uses taint_sources as source, expected_sanitizers as checkpoints)
+```
+
 **Input from go-audit**: The calling audit framework provides the target project directory. On startup, it invokes 5GC-Context-Aware for a full project scan.
 
-**Cross-reference with go-vuln-lib**: Attack patterns in `references/attack_patterns.json` represent the NF-specific vulnerability knowledge base. The correlation engine matches discovered interfaces and assets against these patterns to produce targeted audit directives.
+**Cross-reference with go-vuln-lib**: Attack patterns in `references/attack_patterns.json` include `taint_sources` and `expected_sanitizers` specific to each vulnerability class. The correlation engine maps discovered code artifacts to these patterns.
 
-**Enhancement via go-vuln-insight**: Historical vulnerability cases are used to enrich the Audit Manifest with real-world exploitation context. The `attack_pattern_correlations` section maps each pattern to relevant CVE references and exploitation techniques.
+**Enhancement via go-vuln-insight**: Historical vulnerability cases are correlated with discovered interfaces. The `cwe` field in each `audit_focus` item enables cross-referencing with CVE databases.
 
-**Output to go-audit**: The Audit Manifest's `taint_analysis_directives` and `audit_priority_queue` provide actionable inputs for the taint analysis engine, specifying exact source/sink pairs, entry points, and compliance gaps to investigate.
+**Output to go-audit**: The `audit_focus` array provides go-audit with:
+- **`taint_sources`**: Exact variable/field names to mark as taint sources in the dataflow graph
+- **`expected_sanitizers`**: Function names that should appear in the taint path; if absent, flag as a finding
+- **`business_risk`**: Chinese-language business impact description for the final audit report
+- **`target_func` / `target_var`**: Specific code locations to begin analysis
 
 ---
 
@@ -235,10 +336,10 @@ Read these files for detailed pattern definitions and to extend the skill's know
 
 **Adding a new NF type**: Add entries to `nf_signatures.json` with module patterns, config identifiers, init function patterns, and key imports.
 
-**Adding attack patterns**: Add entries to `attack_patterns.json` under `common_patterns` (applies to all NFs) or `nf_specific_patterns.<NF_TYPE>` (applies to one NF).
+**Adding attack patterns**: Add entries to `attack_patterns.json` under `common_patterns` (applies to all NFs) or `nf_specific_patterns.<NF_TYPE>`. Each pattern must include `business_risk`, `taint_sources`, and `expected_sanitizers`.
 
 **Adding compliance checks**: Add checks to `3gpp_security_baseline.json` under the appropriate domain, or create a new domain section.
 
-**Adding sensitive assets**: Add regex patterns to `sensitive_assets.json` under the appropriate category, or create a new category with sensitivity level.
+**Adding sensitive assets**: Add regex patterns to `sensitive_assets.json` under the appropriate category. Each category should include `business_risk`, `taint_sinks`, and `expected_sanitizers`.
 
 **Custom router frameworks**: Add framework detection patterns to `interface_specs.json` under `router_patterns`.
