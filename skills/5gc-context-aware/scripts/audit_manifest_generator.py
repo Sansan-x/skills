@@ -14,10 +14,16 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .service_profiler import profile_service
-from .interface_mapper import map_interfaces
-from .asset_tagger import scan_project_assets
-from .spec_compliance import run_compliance_check
+try:
+    from .service_profiler import profile_service
+    from .interface_mapper import map_interfaces
+    from .asset_tagger import scan_project_assets
+    from .spec_compliance import run_compliance_check
+except ImportError:
+    from service_profiler import profile_service
+    from interface_mapper import map_interfaces
+    from asset_tagger import scan_project_assets
+    from spec_compliance import run_compliance_check
 
 
 def load_attack_patterns(skill_dir: str) -> dict:
