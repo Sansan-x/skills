@@ -187,7 +187,7 @@
   "title": "审计报告归一化输出格式",
   "description": "代码审计报告归一化后的结构化漏洞数据",
   "type": "object",
-  "required": ["report_name", "total_vulnerabilities", "vulnerabilities"],
+  "required": ["report_name", "total_vulnerabilities", "reports", "vulnerabilities"],
   "properties": {
     "report_name": {
       "type": "string",
@@ -211,6 +211,19 @@
         "严重": { "type": "integer", "description": "严重级别漏洞数量" },
         "一般": { "type": "integer", "description": "一般级别漏洞数量" },
         "提示": { "type": "integer", "description": "提示级别漏洞数量" }
+      }
+    },
+    "reports": {
+      "type": "array",
+      "description": "来源报告列表（单报告时仅一个元素，多报告时记录各报告信息）",
+      "items": {
+        "type": "object",
+        "required": ["source_report"],
+        "properties": {
+          "source_report": { "type": "string", "description": "来源报告文件名" },
+          "report_date":   { "type": ["string", "null"], "format": "date-time", "description": "该报告日期" },
+          "task_id":       { "type": ["string", "null"], "description": "该报告关联的任务ID" }
+        }
       }
     },
     "vulnerabilities": {

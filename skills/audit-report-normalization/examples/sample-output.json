@@ -8,6 +8,13 @@
     "一般": 1,
     "提示": 1
   },
+  "reports": [
+    {
+      "source_report": "WebShop项目代码安全审计报告.md",
+      "report_date": "2025-01-15T00:00:00+08:00",
+      "task_id": "TASK-2025-0042"
+    }
+  ],
   "vulnerabilities": [
     {
       "vuln_id": "VULN-001",
