@@ -50,6 +50,15 @@
       "skills": [
         "./skills/claude-api"
       ]
+    },
+    {
+      "name": "5gc-security-audit",
+      "description": "5G Core Network security audit skills for Go-based NF implementations. Includes business-aware context analysis, NF identification, interface mapping, sensitive asset tagging, and 3GPP TS 33.501 compliance checking.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/5gc-context-aware"
+      ]
     }
   ]
 }

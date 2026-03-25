@@ -1,0 +1,102 @@
+{
+  "_meta": {
+    "version": "2.0.0",
+    "description": "Sensitive 5GC assets for AST-level tagging with business risk context and taint/sanitizer mappings for go-audit integration",
+    "spec_reference": "3GPP TS 33.501 - Security Architecture and Procedures for 5G System"
+  },
+  "subscriber_identity": {
+    "description": "Subscriber identification data that must be protected",
+    "sensitivity": "critical",
+    "business_risk": "用户永久标识泄露可导致用户追踪、身份关联和隐私侵犯",
+    "taint_sinks": ["log_output", "http_response", "error_message", "file_write", "metrics_export"],
+    "expected_sanitizers": ["MaskSUPI", "RedactIdentity", "UseTMSIInstead", "ConvertToSUCI"],
+    "variables": [
+      {"pattern": "(?i)supi", "description": "Subscription Permanent Identifier", "spec": "TS 23.003", "business_risk": "SUPI明文泄露可永久追踪用户位置和通信行为"},
+      {"pattern": "(?i)suci", "description": "Subscription Concealed Identifier", "spec": "TS 23.003", "business_risk": "SUCI处理不当可能暴露底层SUPI"},
+      {"pattern": "(?i)imsi", "description": "International Mobile Subscriber Identity (legacy)", "spec": "TS 23.003", "business_risk": "IMSI泄露可被IMSI Catcher利用进行用户追踪和中间人攻击"},
+      {"pattern": "(?i)guti|5g.?guti|tmsi", "description": "Globally Unique Temporary Identifier", "spec": "TS 23.003", "business_risk": "GUTI未及时刷新可被关联追踪用户"},
+      {"pattern": "(?i)gpsi|msisdn", "description": "Generic Public Subscription Identifier", "spec": "TS 23.003", "business_risk": "GPSI/MSISDN泄露暴露用户手机号码"},
+      {"pattern": "(?i)pei|imei|imeisv", "description": "Permanent Equipment Identifier", "spec": "TS 23.003", "business_risk": "PEI泄露可追踪特定终端设备"},
+      {"pattern": "(?i)amf.?ue.?ngap.?id|ran.?ue.?ngap.?id", "description": "NGAP UE identifiers", "spec": "TS 38.413", "business_risk": "NGAP UE ID泄露可被用于定向信令攻击"}
+    ]
+  },
+  "cryptographic_keys": {
+    "description": "Cryptographic keys and security material",
+    "sensitivity": "critical",
+    "business_risk": "密钥材料泄露可导致NAS消息解密、伪造完整性校验和用户通信窃听",
+    "taint_sinks": ["log_output", "http_response", "file_write", "error_message", "database_write", "cache_store"],
+    "expected_sanitizers": ["ZeroizeKeyMaterial", "SecureKeyStore", "PreventKeyLogging", "UseHSM"],
+    "variables": [
+      {"pattern": "(?i)k.?nas.?enc", "description": "NAS encryption key", "spec": "TS 33.501 Annex A", "business_risk": "KNASenc泄露可解密所有NAS信令消息"},
+      {"pattern": "(?i)k.?nas.?int", "description": "NAS integrity key", "spec": "TS 33.501 Annex A", "business_risk": "KNASint泄露可伪造NAS消息完整性校验"},
+      {"pattern": "(?i)k.?gnb|k.?n3iwf", "description": "Key for gNB/N3IWF", "spec": "TS 33.501 Annex A", "business_risk": "KgNB泄露可解密空口用户面和控制面数据"},
+      {"pattern": "(?i)k.?amf", "description": "AMF key", "spec": "TS 33.501 Annex A", "business_risk": "KAMF泄露可推导所有下层密钥，影响整个安全上下文"},
+      {"pattern": "(?i)k.?ausf", "description": "AUSF key", "spec": "TS 33.501 Annex A", "business_risk": "KAUSF泄露可伪造鉴权结果，跳过认证流程"},
+      {"pattern": "(?i)k.?seaf", "description": "SEAF key", "spec": "TS 33.501 Annex A", "business_risk": "KSEAF泄露影响整个服务网络的密钥安全"},
+      {"pattern": "(?i)k.?nh|nh.?key", "description": "Next Hop key for handover", "spec": "TS 33.501 Annex A", "business_risk": "NH密钥泄露可在切换过程中劫持安全上下文"},
+      {"pattern": "(?i)permanent.?key|(?<![a-zA-Z])ki(?![a-zA-Z])|opc|(?<![a-zA-Z])op(?![a-zA-Z])", "description": "USIM permanent keys", "spec": "TS 33.102", "business_risk": "永久密钥K/OPc泄露可永久克隆SIM卡，无法通过网络侧补救"},
+      {"pattern": "(?i)xres.?star|hxres.?star|xres|hxres", "description": "Authentication response values", "spec": "TS 33.501", "business_risk": "XRES*/HXRES*泄露可伪造鉴权响应通过认证"},
+      {"pattern": "(?i)rand|autn|(?<![a-zA-Z])auts(?![a-zA-Z])", "description": "Authentication vector components", "spec": "TS 33.501", "business_risk": "鉴权向量组件泄露可发起重放攻击或降级攻击"},
+      {"pattern": "(?i)ck.?prime|ik.?prime|ck'|ik'", "description": "Derived cipher/integrity keys", "spec": "TS 33.501", "business_risk": "CK'/IK'泄露可推导后续密钥材料"}
+    ]
+  },
+  "session_data": {
+    "description": "PDU session and tunnel endpoint data",
+    "sensitivity": "high",
+    "business_risk": "会话数据泄露可导致GTP隧道劫持、用户流量重定向和QoS策略篡改",
+    "taint_sinks": ["log_output", "http_response", "error_message", "unencrypted_channel"],
+    "expected_sanitizers": ["ValidateTEIDOwnership", "CheckSessionAuthorization", "SanitizeSessionResponse"],
+    "variables": [
+      {"pattern": "(?i)teid|tunnel.?endpoint", "description": "GTP Tunnel Endpoint Identifier", "spec": "TS 29.281", "business_risk": "TEID泄露可被用于GTP-U隧道注入攻击"},
+      {"pattern": "(?i)f.?teid", "description": "Fully Qualified TEID", "spec": "TS 29.244", "business_risk": "F-TEID篡改可将用户流量重定向到攻击者节点"},
+      {"pattern": "(?i)pdu.?session.?id", "description": "PDU Session Identifier", "spec": "TS 24.501", "business_risk": "PDU Session ID泄露可被用于会话劫持"},
+      {"pattern": "(?i)qfi|qos.?flow.?id", "description": "QoS Flow Identifier", "spec": "TS 23.501", "business_risk": "QFI篡改可绕过QoS策略获取不当的服务质量"},
+      {"pattern": "(?i)pdr.?id|far.?id|qer.?id|urr.?id|bar.?id", "description": "PFCP Rule Identifiers", "spec": "TS 29.244", "business_risk": "PFCP规则ID泄露可辅助攻击者精确篡改转发规则"},
+      {"pattern": "(?i)ue.?ip.?addr", "description": "UE IP Address", "spec": "TS 29.244", "business_risk": "UE IP地址泄露可定位用户并发起定向攻击"},
+      {"pattern": "(?i)dnn|apn", "description": "Data Network Name / Access Point Name", "spec": "TS 23.003", "business_risk": "DNN信息泄露暴露网络切片和服务拓扑"},
+      {"pattern": "(?i)s.?nssai|sst|sd(?![a-zA-Z])", "description": "Network Slice Selection Assistance Information", "spec": "TS 23.003", "business_risk": "S-NSSAI泄露暴露网络切片配置，可辅助切片间攻击"}
+    ]
+  },
+  "security_context": {
+    "description": "NAS and AS security context parameters",
+    "sensitivity": "critical",
+    "business_risk": "安全上下文泄露可导致NAS消息解密、完整性保护绕过和安全降级攻击",
+    "taint_sinks": ["log_output", "http_response", "inter_nf_message", "database_write"],
+    "expected_sanitizers": ["EncryptSecurityContext", "ValidateContextIntegrity", "SecureContextTransfer"],
+    "variables": [
+      {"pattern": "(?i)nas.?security.?context|security.?context", "description": "NAS Security Context", "spec": "TS 33.501", "business_risk": "完整安全上下文泄露等同于所有密钥和计数器泄露"},
+      {"pattern": "(?i)nas.?count|ul.?count|dl.?count", "description": "NAS sequence counters (anti-replay)", "spec": "TS 33.501", "business_risk": "NAS COUNT泄露可绕过重放保护机制"},
+      {"pattern": "(?i)ngksi|ksi|key.?set.?identifier", "description": "Key Set Identifier", "spec": "TS 33.501", "business_risk": "KSI泄露可被用于安全上下文混淆攻击"},
+      {"pattern": "(?i)ncc|next.?hop.?chaining", "description": "Next Hop Chaining Counter", "spec": "TS 33.501", "business_risk": "NCC泄露可在切换过程中预测密钥推导"},
+      {"pattern": "(?i)security.?capability|ue.?security.?cap", "description": "UE Security Capabilities", "spec": "TS 33.501", "business_risk": "安全能力篡改可发起降级攻击(Bidding-down)"},
+      {"pattern": "(?i)integrity.?algo|cipher.?algo|ea[0-3]|ia[0-3]", "description": "Selected security algorithms", "spec": "TS 33.501", "business_risk": "算法选择篡改可降级至弱加密或空加密"}
+    ]
+  },
+  "location_data": {
+    "description": "UE location and mobility information",
+    "sensitivity": "high",
+    "business_risk": "位置数据泄露可精确定位用户物理位置，严重侵犯用户隐私",
+    "taint_sinks": ["log_output", "http_response", "analytics_export", "third_party_api"],
+    "expected_sanitizers": ["AnonymizeLocation", "CheckLocationAccessAuth", "CoarsenLocationGranularity"],
+    "variables": [
+      {"pattern": "(?i)tai|tracking.?area", "description": "Tracking Area Identity", "spec": "TS 23.003", "business_risk": "TAI泄露可追踪用户至跟踪区级别"},
+      {"pattern": "(?i)cell.?id|nr.?cgi|ecgi", "description": "Cell/CGI Identifiers", "spec": "TS 23.003", "business_risk": "Cell ID泄露可精确定位用户至基站覆盖范围"},
+      {"pattern": "(?i)user.?location|ue.?location", "description": "UE Location Information", "spec": "TS 29.571", "business_risk": "UE位置信息泄露直接暴露用户物理位置"},
+      {"pattern": "(?i)plmn.?id|mcc|mnc", "description": "PLMN Identity (MCC/MNC)", "spec": "TS 23.003", "business_risk": "PLMN ID泄露暴露用户归属运营商和漫游状态"},
+      {"pattern": "(?i)ran.?node.?id|gnb.?id", "description": "RAN Node/gNB Identifiers", "spec": "TS 38.413", "business_risk": "gNB ID泄露暴露网络基础设施拓扑"}
+    ]
+  },
+  "struct_types": {
+    "description": "Key Go struct types in 5GC implementations that hold sensitive data",
+    "entries": [
+      {"pattern": "(?i)AmfUe|AMFUe", "description": "AMF UE context struct", "contains": ["SUPI", "GUTI", "SecurityContext"], "business_risk": "AMF UE上下文包含完整用户身份和安全材料", "expected_sanitizers": ["LockBeforeAccess", "ClearOnRelease"]},
+      {"pattern": "(?i)RanUe|RANUe", "description": "RAN UE context struct", "contains": ["AMF_UE_NGAP_ID", "RAN_UE_NGAP_ID"], "business_risk": "RAN UE上下文关联无线侧和核心网UE标识", "expected_sanitizers": ["ValidateNGAPIdPair"]},
+      {"pattern": "(?i)SmContext|SMContext", "description": "SM context struct", "contains": ["PDUSession", "TEID", "UE_IP"], "business_risk": "SM上下文包含完整会话和隧道信息", "expected_sanitizers": ["ValidateSessionOwnership", "LockBeforeModify"]},
+      {"pattern": "(?i)PfcpSession|PFCPSession", "description": "PFCP session struct", "contains": ["PDR", "FAR", "QER"], "business_risk": "PFCP会话包含完整转发规则，篡改可劫持用户流量", "expected_sanitizers": ["VerifyPFCPAssociation", "ValidateRuleConsistency"]},
+      {"pattern": "(?i)UeContext|UEContext", "description": "Generic UE context", "contains": ["SUPI", "SecurityContext"], "business_risk": "通用UE上下文聚合所有敏感用户数据", "expected_sanitizers": ["MutexProtection", "SecureCleanup"]},
+      {"pattern": "(?i)AuthenticationCtx|AuthCtx", "description": "Authentication context", "contains": ["AV", "XRES", "Kausf"], "business_risk": "鉴权上下文包含鉴权向量和根密钥", "expected_sanitizers": ["ZeroizeAfterAuth", "PreventCaching"]},
+      {"pattern": "(?i)NfProfile|NFProfile", "description": "NF registration profile", "contains": ["nfInstanceId", "ipv4Addresses"], "business_risk": "NF画像泄露核心网拓扑信息", "expected_sanitizers": ["FilterByScope", "ValidateProfileClaims"]},
+      {"pattern": "(?i)SubscriberData|SubscriptionData", "description": "Subscriber data records", "contains": ["SUPI", "DNN", "S-NSSAI"], "business_risk": "签约数据包含用户所有业务授权信息", "expected_sanitizers": ["CheckAccessAuthorization", "AuditDataAccess"]}
+    ]
+  }
+}
