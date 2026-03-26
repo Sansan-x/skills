@@ -1,0 +1,24 @@
+{
+  "skill_name": "5gc-audit-executor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "在当前 workspace root（一个已包含 audit_tasklist.json 和 audit_tasks/*.md 的 5GC Go 审计项目）中运行本技能，生成 ordered_tasks.json 并输出报告（或报告骨架）。",
+      "expected_output": "生成 reports/ 下的 *-5gcoreaudit-*.md 报告文件，并生成 ordered_tasks.json。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "仅给定 audit_tasklist.json（audit_tasks 目录可能部分缺失）时，仍应尽可能输出 report skeleton，并在 ordered_tasks.json 中跳过找不到的任务 md。",
+      "expected_output": "reports/ 下生成 *-5gcoreaudit-*.md；ordered_tasks.json 存在且包含尽可能多的任务条目。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "给定完整 audit_tasklist.json 与 audit_tasks/*.md 时，确保 reasoning 的顺序遵循 module -> business flow -> single function，并在报告中按章节对齐输出。",
+      "expected_output": "报告至少包含章节标题：1.执行摘要、2.项目概况、3.审计范围与方法、4.发现汇总、5.详细发现。",
+      "files": []
+    }
+  ]
+}
+

@@ -1,0 +1,30 @@
+{
+  "skill_name": "5gc-audit-end2end",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "仅给定 workspace root（目标 5GC Go 项目目录），运行本 end2end skill：应自动回退执行 Stage-1/2/3，生成 ordered_tasks.json，并输出 reports/ 下的 *-5gcoreaudit-*.md 报告（至少为 report skeleton，理想情况下填充最终报告）。",
+      "expected_output": "目标项目根目录生成 audit_project_map.json、audit_checklists.json、audit_matrix.json、audit_tasklist.json、audit_tasks/；并生成 ordered_tasks.json 与 reports/*-5gcoreaudit-*.md。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "给定 workspace root，且目录中已存在 audit_project_map.json 与 audit_checklists.json（Stage-1 已完成）。运行本 end2end skill：应跳过 Stage-1，继续 Stage-2/3，并输出最终报告文件。",
+      "expected_output": "不重复要求用户手动执行 Stage-1；继续生成 audit_matrix.json、audit_tasklist.json、audit_tasks/、ordered_tasks.json 与 reports/*-5gcoreaudit-*.md。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "给定 workspace root，且目录中已存在 audit_tasklist.json 与 audit_tasks/（Stage-2 已完成），但缺少 ordered_tasks.json 或 reports/*-5gcoreaudit-*.md。运行本 end2end skill：应仅回退执行 Stage-3 并继续后续填充。",
+      "expected_output": "生成 ordered_tasks.json 与 reports/*-5gcoreaudit-*.md；若 audit_tasks 中存在缺失的任务 md，应在 ordered_tasks.json 中尽可能多包含任务并在报告中明确说明覆盖不完整（不得臆想补齐）。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "顺序约束评估：给定完整产物（ordered_tasks.json + report 文件），检查报告文本中是否显式体现“先 module 再 business flow 再 single function”的顺序证据，并且推理填充应按 ordered_tasks.json 推进。",
+      "expected_output": "报告中出现类似文本证据：`审计模式： module -> business flow -> single function`，并在“审计范围与方法/详细发现”中按 module→business flow→single function 的顺序组织内容（不在 business flow 阶段展开为单函数 full chain）。",
+      "files": []
+    }
+  ]
+}
+
