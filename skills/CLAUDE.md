@@ -5,18 +5,18 @@ Step 1: 运行 `Agent(project-analyzer)`。
 
 约束：
 - `project-analyzer` 只负责阶段1-3。
-- 仅接收并保存其输出中的固定标题块：`# Auditing Strategy Plan`（整段原文，不要二次改写）。
+- 必须将审计策略计划写入文件 `./reports/audit-strategy-plan.md`。
 
 输出：
-- `strategy_plan` = `# Auditing Strategy Plan` 固定标题块原文
+- `strategy_plan_file` = `./reports/audit-strategy-plan.md`
 
 ## Stage 2: go-audit
 Step 2: 运行 `Agent(go-audit)`。
 
-输入注入（粘贴/注入到本 step prompt 中）：
-- `strategy_plan`（上一步的 `# Auditing Strategy Plan` 原文）
+输入：
+- `go-audit` 将自动从 `./reports/audit-strategy-plan.md` 读取审计策略计划，不再需要上下文粘贴/注入。
 
 硬性约束：
-- `go-audit` 必须严格依赖 `strategy_plan`，禁止自行生成阶段1-3内容。
-- 如果 `strategy_plan` 中缺失字段，必须标注“不确定”，而不是臆想补全。
-
+- `go-audit` 必须严格依赖 `./reports/audit-strategy-plan.md` 的文件内容，禁止自行生成阶段1-3内容。
+- 如果文件不存在或为空，`go-audit` 必须中止并提示先运行 `project-analyzer`。
+- 如果策略计划中缺失字段，必须标注"不确定"，而不是臆想补全。
