@@ -1,0 +1,666 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-04-12T08:52:52.400729+00:00",
+  "source": "skills/5gc-audit-decompose-map-checklist/references/checklists_5gc.json",
+  "checklist_categories": [
+    {
+      "category_id": "SBI_AUTHORIZATION",
+      "category_title": "SBI 鉴权/授权覆盖（OAuth2/mTLS/token）",
+      "risk_domain": "SBI",
+      "check_items": [
+        {
+          "check_id": "SBI-AUTH-001",
+          "severity": "critical",
+          "title": "安全关键 SBI 路由必须经过 token/证书校验与授权门控",
+          "cwe": [
+            "CWE-306",
+            "CWE-862"
+          ],
+          "evidence": {
+            "module_path_contains": [
+              "sbi",
+              "router",
+              "producer",
+              "controller"
+            ],
+            "function_name_contains": [
+              "Handle",
+              "Process",
+              "ServeHTTP",
+              "Producer",
+              "Auth"
+            ],
+            "string_regex_any": [
+              "Authorization",
+              "OAuth",
+              "Bearer",
+              "mTLS",
+              "InsecureSkipVerify"
+            ],
+            "expected_sanitizers": [
+              "VerifyAccessToken",
+              "ValidateOAuth2Token",
+              "CheckClientCertificate",
+              "AuthMiddleware"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "route handler",
+              "request parse",
+              "auth middleware chain"
+            ],
+            "key_sinks": [
+              "VerifyAccessToken",
+              "ValidateOAuth2Token",
+              "CheckClientCertificate",
+              "AuthMiddleware"
+            ],
+            "stop_conditions": [
+              "access decision gates any sensitive action (session/context write, protocol forward, key usage)"
+            ]
+          }
+        },
+        {
+          "check_id": "SBI-AUTH-002",
+          "severity": "high",
+          "title": "鉴权缺失或覆盖不足：关键服务端操作必须有 Nf 级授权校验",
+          "cwe": [
+            "CWE-862"
+          ],
+          "evidence": {
+            "module_path_contains": [
+              "nsmf",
+              "namf",
+              "nausf",
+              "nudm",
+              "nudr",
+              "npcf",
+              "nnrf",
+              "n5g-uid",
+              "nef",
+              "nssf"
+            ],
+            "function_name_contains": [
+              "Handle",
+              "Process"
+            ],
+            "string_regex_any": [
+              "CheckNFAuthorization",
+              "ValidateNF",
+              "NF",
+              "NfInstanceID"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "SBI API operation",
+              "NF access check"
+            ],
+            "key_sinks": [
+              "CheckNFAuthorization",
+              "ValidateNF",
+              "VerifyAccessToken"
+            ],
+            "stop_conditions": [
+              "after NF access control check before stateful operations"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "PROTOCOL_PARSING_VALIDATION",
+      "category_title": "协议解析与长度/字段校验（NAS/NGAP/PFCP）",
+      "risk_domain": "ProtocolParsing",
+      "check_items": [
+        {
+          "check_id": "PROTO-VALID-001",
+          "severity": "critical",
+          "title": "解码/反序列化前必须验证长度、mandatory IE/fields 与错误处理",
+          "cwe": [
+            "CWE-120",
+            "CWE-125",
+            "CWE-787"
+          ],
+          "evidence": {
+            "function_name_contains": [
+              "Decode",
+              "Unmarshal",
+              "Parse",
+              "Handle",
+              "HandlePFCP",
+              "HandleNAS",
+              "HandleNGAP"
+            ],
+            "string_regex_any": [
+              "Unmarshal",
+              "Decode",
+              "Aper",
+              "binary.Read",
+              "Make([]byte",
+              "NewBuffer"
+            ],
+            "file_path_contains": [
+              "nas",
+              "ngap",
+              "pfcp"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "protocol message handler entry",
+              "raw bytes ingestion"
+            ],
+            "key_sinks": [
+              "ValidateMessageLength",
+              "CheckIEBounds",
+              "VerifyMandatoryIEs",
+              "error return checks"
+            ],
+            "stop_conditions": [
+              "after validation and before any field access that could panic/index out-of-bounds"
+            ]
+          }
+        },
+        {
+          "check_id": "PROTO-VALID-002",
+          "severity": "high",
+          "title": "对 decode/unmarshal 的 error 必须处理，否则可能 DoS/状态污染",
+          "cwe": [
+            "CWE-703",
+            "CWE-209"
+          ],
+          "evidence": {
+            "string_regex_any": [
+              "if err != nil",
+              "err :=",
+              "Unmarshal",
+              "Decode",
+              "Parse",
+              "panic",
+              "TODO",
+              "FIXME"
+            ],
+            "function_name_contains": [
+              "Handle",
+              "Process"
+            ],
+            "file_path_contains": [
+              "nas",
+              "ngap",
+              "pfcp"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "decode callsite",
+              "error propagation"
+            ],
+            "key_sinks": [
+              "error handling branches",
+              "return/abort on decode failure"
+            ],
+            "stop_conditions": [
+              "after explicit handling that prevents continuing with invalid decoded state"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "PFCP_SESSION_OWNERSHIP",
+      "category_title": "PFCP 会话建立/修改的所有权与规则一致性校验",
+      "risk_domain": "PFCP",
+      "check_items": [
+        {
+          "check_id": "PFCP-SESSION-001",
+          "severity": "critical",
+          "title": "PFCP Session Establishment 必须校验消息来源节点关联与会话归属（ownership）",
+          "cwe": [
+            "CWE-346",
+            "CWE-290"
+          ],
+          "evidence": {
+            "function_name_contains": [
+              "HandlePFCPSession",
+              "SessionEstablishment",
+              "PFCPSessionEstablishment"
+            ],
+            "file_path_contains": [
+              "pfcp"
+            ],
+            "string_regex_any": [
+              "NodeID",
+              "SEID",
+              "RemoteF_TEID",
+              "Association",
+              "ValidateUPFIdentity",
+              "CheckNodeAssociation"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "PFCP SessionEstablishment handler",
+              "incoming msg validation"
+            ],
+            "key_sinks": [
+              "ValidateUPFIdentity",
+              "CheckNodeAssociation",
+              "VerifyPFCPSource",
+              "ValidateSEID"
+            ],
+            "stop_conditions": [
+              "before session/context creation and before any rule programming (PDR/FAR/QER)"
+            ]
+          }
+        },
+        {
+          "check_id": "PFCP-SESSION-002",
+          "severity": "high",
+          "title": "PFCP Session Modification 必须校验会话所有权与修改合法性，避免越权重定向",
+          "cwe": [
+            "CWE-862",
+            "CWE-285"
+          ],
+          "evidence": {
+            "function_name_contains": [
+              "SessionModification",
+              "PFCPSessionModification",
+              "HandleSessionModification"
+            ],
+            "file_path_contains": [
+              "pfcp"
+            ],
+            "string_regex_any": [
+              "CheckSessionOwnership",
+              "ValidateModification",
+              "SEID",
+              "NodeID"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "PFCP SessionModification handler",
+              "lookup existing session"
+            ],
+            "key_sinks": [
+              "CheckSessionOwnership",
+              "ValidateModification",
+              "VerifyAssociationState"
+            ],
+            "stop_conditions": [
+              "after ownership validation and rule consistency checks before applying updates"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "TEID_FTEID_MANAGEMENT",
+      "category_title": "TEID/F-TEID 管理与唯一性/一致性校验",
+      "risk_domain": "GTP-U/PFCP",
+      "check_items": [
+        {
+          "check_id": "TEID-001",
+          "severity": "high",
+          "title": "TEID/F-TEID 创建/引用必须校验唯一性、所有权与合法范围",
+          "cwe": [
+            "CWE-471",
+            "CWE-290"
+          ],
+          "evidence": {
+            "function_name_contains": [
+              "TEID",
+              "FTEID",
+              "CreatePDR",
+              "CreateFAR",
+              "OuterHeaderCreation",
+              "SetTEID"
+            ],
+            "file_path_contains": [
+              "pfcp",
+              "gtp",
+              "tunnel"
+            ],
+            "string_regex_any": [
+              "ValidateTEIDUniqueness",
+              "CheckFTEIDOwnership",
+              "VerifyTunnelEndpoint"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "PDR/FAR/QER creation",
+              "outer header creation"
+            ],
+            "key_sinks": [
+              "ValidateTEIDUniqueness",
+              "CheckFTEIDOwnership",
+              "VerifyTunnelEndpoint"
+            ],
+            "stop_conditions": [
+              "before programming forwarding rules and before using TEID in tunnel setup"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "CRYPTO_KEY_MANAGEMENT",
+      "category_title": "密钥材料管理（记录/内存生命周期/零化）",
+      "risk_domain": "CryptoKeys",
+      "check_items": [
+        {
+          "check_id": "CRYPTO-KEY-001",
+          "severity": "critical",
+          "title": "密钥材料必须避免日志/响应泄露，并在生命周期结束后清理（zeroize）",
+          "cwe": [
+            "CWE-312",
+            "CWE-200"
+          ],
+          "evidence": {
+            "string_regex_any": [
+              "Knas",
+              "K_NAS",
+              "kNas",
+              "kAmf",
+              "kAusf",
+              "xres",
+              "ngKsi",
+              "Key",
+              "Secret"
+            ],
+            "file_path_contains": [
+              "context",
+              "crypto",
+              "nas",
+              "security"
+            ],
+            "expected_sanitizers": [
+              "ZeroizeKeyMaterial",
+              "SecureKeyStore",
+              "PreventKeyLogging",
+              "UseHSM"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "key derivation/storage",
+              "session/context creation"
+            ],
+            "key_sinks": [
+              "PreventKeyLogging",
+              "ZeroizeKeyMaterial",
+              "SecureKeyStore",
+              "UseHSM"
+            ],
+            "stop_conditions": [
+              "after ensuring keys are stored safely and never emitted in logs/HTTP/PFCP responses"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "SENSITIVE_ASSET_LEAKAGE",
+      "category_title": "敏感资产泄露（SUPI/SUCI/TEID/上下文）",
+      "risk_domain": "PrivacyAndLeakage",
+      "check_items": [
+        {
+          "check_id": "SENS-LEAK-001",
+          "severity": "critical",
+          "title": "敏感标识（SUPI/SUCI/IMSI/GUTI）不得以明文写入日志、响应或错误信息",
+          "cwe": [
+            "CWE-200",
+            "CWE-532"
+          ],
+          "evidence": {
+            "string_regex_any": [
+              "supi",
+              "suci",
+              "imsi",
+              "guti",
+              "gpsi",
+              "pei",
+              "TEID",
+              "SEID",
+              "kNas"
+            ],
+            "file_path_contains": [
+              "log",
+              "logger",
+              "context",
+              "sbi",
+              "pfcp",
+              "nas"
+            ],
+            "expected_sanitizers": [
+              "RedactSensitive",
+              "MaskSUPI",
+              "AvoidPlaintextLogs"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "sensitive asset handling",
+              "log/http response write"
+            ],
+            "key_sinks": [
+              "redaction/masking",
+              "safe logging helpers",
+              "structured logging with redaction"
+            ],
+            "stop_conditions": [
+              "after verifying all output paths for sensitive assets include masking or suppression"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "CONCURRENCY_LIFECYCLE",
+      "category_title": "并发与生命周期（敏感上下文的 mutex/清理）",
+      "risk_domain": "Concurrency",
+      "check_items": [
+        {
+          "check_id": "CONC-001",
+          "severity": "high",
+          "title": "包含敏感会话上下文的结构体必须有正确的锁保护与生命周期清理",
+          "cwe": [
+            "CWE-362",
+            "CWE-400"
+          ],
+          "evidence": {
+            "string_regex_any": [
+              "Mutex",
+              "sync.Mutex",
+              "sync.RWMutex",
+              "Lock",
+              "Unlock",
+              "Clear",
+              "Delete",
+              "Release",
+              "defer"
+            ],
+            "file_path_contains": [
+              "context",
+              "session",
+              "sm_context",
+              "pfcp"
+            ],
+            "function_name_contains": [
+              "Release",
+              "Cleanup",
+              "Delete",
+              "Close",
+              "Expire",
+              "Remove"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "context read/write",
+              "lock scope",
+              "cleanup path"
+            ],
+            "key_sinks": [
+              "mutex lock/unlock around sensitive fields",
+              "clear-on-release helpers"
+            ],
+            "stop_conditions": [
+              "after verifying all writes to sensitive context are guarded and cleared"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "ERROR_HANDLING_INFOLEAK",
+      "category_title": "错误处理与信息泄露（panic/日志/返回内容）",
+      "risk_domain": "ErrorHandling",
+      "check_items": [
+        {
+          "check_id": "ERR-INFOLEAK-001",
+          "severity": "medium",
+          "title": "错误处理不得泄露内部路径、堆栈或敏感数据；panic/recover 必须受控",
+          "cwe": [
+            "CWE-209",
+            "CWE-117"
+          ],
+          "evidence": {
+            "string_regex_any": [
+              "panic(",
+              "recover(",
+              "logger.",
+              "log.",
+              "fmt.Printf",
+              "error",
+              "err.Error()",
+              "http.Error"
+            ],
+            "function_name_contains": [
+              "Recover",
+              "middleware",
+              "Error",
+              "Handle",
+              "ServeHTTP"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "error creation",
+              "response/write to caller"
+            ],
+            "key_sinks": [
+              "redacted error messages",
+              "safe recovery middleware",
+              "log sanitization"
+            ],
+            "stop_conditions": [
+              "after verifying external error responses are generic and logs are sanitized"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "DOS_RESOURCE_LIMITS",
+      "category_title": "拒绝服务（解码大小/请求体/资源上限）",
+      "risk_domain": "DoS",
+      "check_items": [
+        {
+          "check_id": "DOS-001",
+          "severity": "high",
+          "title": "解码/读取必须有大小限制（避免内存耗尽/解压炸弹/超大消息）",
+          "cwe": [
+            "CWE-400",
+            "CWE-770"
+          ],
+          "evidence": {
+            "string_regex_any": [
+              "MaxBytes",
+              "LimitReader",
+              "MaxRecvMsgSize",
+              "ReadAll(",
+              "io.ReadAll",
+              "Decode",
+              "Unmarshal",
+              "MaxMessage"
+            ],
+            "file_path_contains": [
+              "nas",
+              "ngap",
+              "pfcp",
+              "sbi"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "read raw message",
+              "decoder invocation"
+            ],
+            "key_sinks": [
+              "length checks",
+              "MaxBytesReader",
+              "io.LimitReader",
+              "MaxRecvMsgSize"
+            ],
+            "stop_conditions": [
+              "after verifying any untrusted payload is size-bounded before allocation"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "category_id": "GENERAL_GO_SECURITY_TRAPS",
+      "category_title": "Go 语言特有安全陷阱（unsafe/reflect/go:generate/init）",
+      "risk_domain": "GoTraps",
+      "check_items": [
+        {
+          "check_id": "GO-TRAP-001",
+          "severity": "medium",
+          "title": "检查 unsafe/reflect/go:generate/init/secret 字符串硬编码等风险点",
+          "cwe": [
+            "CWE-94",
+            "CWE-843",
+            "CWE-470"
+          ],
+          "evidence": {
+            "string_regex_any": [
+              "unsafe",
+              "reflect.",
+              "go:generate",
+              "InsecureSkipVerify",
+              "Hardcoded",
+              "secret",
+              "password",
+              "token"
+            ],
+            "file_path_contains": [
+              "cmd",
+              "internal",
+              "pkg",
+              "config"
+            ]
+          },
+          "task_generation": {
+            "business_flow_entry_keywords": [
+              "codegen/load/init side effects",
+              "dynamic invocation"
+            ],
+            "key_sinks": [
+              "guardrails around dynamic execution",
+              "secret management helpers"
+            ],
+            "stop_conditions": [
+              "after reviewing all risky constructs and documenting whether they are gated/mitigated"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "category_count": 10
+}

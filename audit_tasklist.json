@@ -1,0 +1,204 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-04-12T08:52:58.245720+00:00",
+  "module_taskgroups": [
+    {
+      "module_id": "mod-0000",
+      "module_path": "cmd",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0001",
+      "module_path": "internal/context",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0002",
+      "module_path": "internal/logger",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0003",
+      "module_path": "internal/sbi",
+      "business_flows": [
+        {
+          "business_flow_id": "BF-03-SBI_AUTHORIZATION-SBI-AUTH-001",
+          "category_id": "SBI_AUTHORIZATION",
+          "check_id": "SBI-AUTH-001",
+          "entry_func_id": "fn-000043",
+          "entry_name": "HandleGetAmfNon3gppAccess",
+          "entry_file": "internal/sbi/api_uecontextmanagement.go",
+          "entry_line": 243,
+          "candidate_functions": [
+            "fn-000043",
+            "fn-000113",
+            "fn-000114",
+            "fn-000132",
+            "fn-000133",
+            "fn-000134"
+          ],
+          "stop_conditions": [
+            "access decision gates any sensitive action (session/context write, protocol forward, key usage)"
+          ]
+        },
+        {
+          "business_flow_id": "BF-03-SBI_AUTHORIZATION-SBI-AUTH-002",
+          "category_id": "SBI_AUTHORIZATION",
+          "check_id": "SBI-AUTH-002",
+          "entry_func_id": "fn-000043",
+          "entry_name": "HandleGetAmfNon3gppAccess",
+          "entry_file": "internal/sbi/api_uecontextmanagement.go",
+          "entry_line": 243,
+          "candidate_functions": [
+            "fn-000043",
+            "fn-000113",
+            "fn-000114",
+            "fn-000132",
+            "fn-000133",
+            "fn-000134"
+          ],
+          "stop_conditions": [
+            "after NF access control check before stateful operations"
+          ]
+        },
+        {
+          "business_flow_id": "BF-03-SENSITIVE_ASSET_LEAKAGE-SENS-LEAK-001",
+          "category_id": "SENSITIVE_ASSET_LEAKAGE",
+          "check_id": "SENS-LEAK-001",
+          "entry_func_id": "fn-000043",
+          "entry_name": "HandleGetAmfNon3gppAccess",
+          "entry_file": "internal/sbi/api_uecontextmanagement.go",
+          "entry_line": 243,
+          "candidate_functions": [
+            "fn-000043",
+            "fn-000113",
+            "fn-000114",
+            "fn-000132",
+            "fn-000133",
+            "fn-000134"
+          ],
+          "stop_conditions": [
+            "after verifying all output paths for sensitive assets include masking or suppression"
+          ]
+        },
+        {
+          "business_flow_id": "BF-03-GENERAL_GO_SECURITY_TRAPS-GO-TRAP-001",
+          "category_id": "GENERAL_GO_SECURITY_TRAPS",
+          "check_id": "GO-TRAP-001",
+          "entry_func_id": "fn-000043",
+          "entry_name": "HandleGetAmfNon3gppAccess",
+          "entry_file": "internal/sbi/api_uecontextmanagement.go",
+          "entry_line": 243,
+          "candidate_functions": [
+            "fn-000043",
+            "fn-000113",
+            "fn-000114",
+            "fn-000132",
+            "fn-000133",
+            "fn-000134"
+          ],
+          "stop_conditions": [
+            "after reviewing all risky constructs and documenting whether they are gated/mitigated"
+          ]
+        },
+        {
+          "business_flow_id": "BF-03-DOS_RESOURCE_LIMITS-DOS-001",
+          "category_id": "DOS_RESOURCE_LIMITS",
+          "check_id": "DOS-001",
+          "entry_func_id": "fn-000043",
+          "entry_name": "HandleGetAmfNon3gppAccess",
+          "entry_file": "internal/sbi/api_uecontextmanagement.go",
+          "entry_line": 243,
+          "candidate_functions": [
+            "fn-000043",
+            "fn-000113",
+            "fn-000114",
+            "fn-000132",
+            "fn-000133",
+            "fn-000134"
+          ],
+          "stop_conditions": [
+            "after verifying any untrusted payload is size-bounded before allocation"
+          ]
+        },
+        {
+          "business_flow_id": "BF-03-PROTOCOL_PARSING_VALIDATION-PROTO-VALID-001",
+          "category_id": "PROTOCOL_PARSING_VALIDATION",
+          "check_id": "PROTO-VALID-001",
+          "entry_func_id": "fn-000043",
+          "entry_name": "HandleGetAmfNon3gppAccess",
+          "entry_file": "internal/sbi/api_uecontextmanagement.go",
+          "entry_line": 243,
+          "candidate_functions": [
+            "fn-000043",
+            "fn-000113",
+            "fn-000114",
+            "fn-000132",
+            "fn-000133",
+            "fn-000134"
+          ],
+          "stop_conditions": [
+            "after validation and before any field access that could panic/index out-of-bounds"
+          ]
+        }
+      ]
+    },
+    {
+      "module_id": "mod-0004",
+      "module_path": "internal/sbi/consumer",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0005",
+      "module_path": "internal/sbi/processor",
+      "business_flows": [
+        {
+          "business_flow_id": "BF-05-SBI_AUTHORIZATION-SBI-AUTH-001",
+          "category_id": "SBI_AUTHORIZATION",
+          "check_id": "SBI-AUTH-001",
+          "entry_func_id": "fn-000170",
+          "entry_name": "ConfirmAuthDataProcedure",
+          "entry_file": "internal/sbi/processor/generate_auth_data.go",
+          "entry_line": 77,
+          "candidate_functions": [
+            "fn-000170",
+            "fn-000171"
+          ],
+          "stop_conditions": [
+            "access decision gates any sensitive action (session/context write, protocol forward, key usage)"
+          ]
+        }
+      ]
+    },
+    {
+      "module_id": "mod-0006",
+      "module_path": "internal/util",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0007",
+      "module_path": "pkg/app",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0008",
+      "module_path": "pkg/factory",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0009",
+      "module_path": "pkg/mockapp",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0010",
+      "module_path": "pkg/service",
+      "business_flows": []
+    },
+    {
+      "module_id": "mod-0011",
+      "module_path": "pkg/suci",
+      "business_flows": []
+    }
+  ]
+}

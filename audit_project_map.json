@@ -1,0 +1,3567 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-04-12T08:52:52.399041+00:00",
+  "project_dir": "/Users/xuu-haoshan/Projects/free5gc/udm-1.3.2",
+  "extraction_method": {
+    "tree_sitter_go": "not_available",
+    "call_graph": "regex_approx"
+  },
+  "stats": {
+    "go_files_scanned": 38,
+    "modules_extracted": 12,
+    "functions_extracted": 181,
+    "entry_candidates_sbi": 30,
+    "entry_candidates_protocol": 0
+  },
+  "modules": [
+    {
+      "name": "main",
+      "path": "cmd",
+      "go_files": [
+        "cmd/main.go"
+      ],
+      "packages": [
+        "main"
+      ],
+      "module_id": "mod-0000",
+      "function_ids": [
+        "fn-000000"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "context",
+      "path": "internal/context",
+      "go_files": [
+        "internal/context/context.go"
+      ],
+      "packages": [
+        "context"
+      ],
+      "module_id": "mod-0001",
+      "function_ids": [
+        "fn-000023",
+        "fn-000024",
+        "fn-000025",
+        "fn-000026",
+        "fn-000027",
+        "fn-000028",
+        "fn-000029",
+        "fn-000030",
+        "fn-000031",
+        "fn-000032",
+        "fn-000033",
+        "fn-000034",
+        "fn-000035",
+        "fn-000036",
+        "fn-000037",
+        "fn-000038",
+        "fn-000039"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "logger",
+      "path": "internal/logger",
+      "go_files": [
+        "internal/logger/logger.go"
+      ],
+      "packages": [
+        "logger"
+      ],
+      "module_id": "mod-0002",
+      "function_ids": [
+        "fn-000040"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "sbi",
+      "path": "internal/sbi",
+      "go_files": [
+        "internal/sbi/api_uecontextmanagement.go",
+        "internal/sbi/api_subscriberdatamanagement.go",
+        "internal/sbi/api_servicespecificauthorization.go",
+        "internal/sbi/server.go",
+        "internal/sbi/api_httpcallback.go",
+        "internal/sbi/api_parameterprovision.go",
+        "internal/sbi/api_ueauthentication.go",
+        "internal/sbi/api_niddauthentication.go",
+        "internal/sbi/api_mt.go",
+        "internal/sbi/api_reportsmdeliverystatus.go",
+        "internal/sbi/api_ueid.go",
+        "internal/sbi/api_eventexposure.go",
+        "internal/sbi/router.go"
+      ],
+      "packages": [
+        "sbi"
+      ],
+      "module_id": "mod-0003",
+      "function_ids": [
+        "fn-000043",
+        "fn-000044",
+        "fn-000045",
+        "fn-000046",
+        "fn-000047",
+        "fn-000048",
+        "fn-000049",
+        "fn-000050",
+        "fn-000051",
+        "fn-000052",
+        "fn-000053",
+        "fn-000054",
+        "fn-000055",
+        "fn-000056",
+        "fn-000057",
+        "fn-000058",
+        "fn-000059",
+        "fn-000060",
+        "fn-000061",
+        "fn-000062",
+        "fn-000063",
+        "fn-000064",
+        "fn-000065",
+        "fn-000066",
+        "fn-000067",
+        "fn-000068",
+        "fn-000069",
+        "fn-000070",
+        "fn-000071",
+        "fn-000072",
+        "fn-000073",
+        "fn-000074",
+        "fn-000075",
+        "fn-000076",
+        "fn-000077",
+        "fn-000078",
+        "fn-000079",
+        "fn-000080",
+        "fn-000081",
+        "fn-000082",
+        "fn-000083",
+        "fn-000084",
+        "fn-000085",
+        "fn-000086",
+        "fn-000087",
+        "fn-000088",
+        "fn-000089",
+        "fn-000090",
+        "fn-000091",
+        "fn-000092",
+        "fn-000093",
+        "fn-000094",
+        "fn-000095",
+        "fn-000096",
+        "fn-000097",
+        "fn-000098",
+        "fn-000099",
+        "fn-000100",
+        "fn-000101",
+        "fn-000102",
+        "fn-000103",
+        "fn-000104",
+        "fn-000105",
+        "fn-000106",
+        "fn-000107",
+        "fn-000108",
+        "fn-000109",
+        "fn-000110",
+        "fn-000111",
+        "fn-000112",
+        "fn-000113",
+        "fn-000114",
+        "fn-000115",
+        "fn-000116",
+        "fn-000117",
+        "fn-000118",
+        "fn-000119",
+        "fn-000120",
+        "fn-000121",
+        "fn-000122",
+        "fn-000123",
+        "fn-000124",
+        "fn-000125",
+        "fn-000126",
+        "fn-000127",
+        "fn-000128",
+        "fn-000129",
+        "fn-000130",
+        "fn-000131",
+        "fn-000132",
+        "fn-000133",
+        "fn-000134",
+        "fn-000135",
+        "fn-000136",
+        "fn-000137",
+        "fn-000138",
+        "fn-000139",
+        "fn-000140",
+        "fn-000141",
+        "fn-000142",
+        "fn-000143",
+        "fn-000144",
+        "fn-000145",
+        "fn-000146",
+        "fn-000147",
+        "fn-000148",
+        "fn-000149",
+        "fn-000150"
+      ],
+      "module_signals": [
+        "has_sbi"
+      ]
+    },
+    {
+      "name": "consumer",
+      "path": "internal/sbi/consumer",
+      "go_files": [
+        "internal/sbi/consumer/nrf_service.go",
+        "internal/sbi/consumer/udm_service.go",
+        "internal/sbi/consumer/udr_service.go",
+        "internal/sbi/consumer/consumer.go"
+      ],
+      "packages": [
+        "consumer"
+      ],
+      "module_id": "mod-0004",
+      "module_signals": [
+        "has_sbi"
+      ]
+    },
+    {
+      "name": "processor",
+      "path": "internal/sbi/processor",
+      "go_files": [
+        "internal/sbi/processor/subscriber_data_management.go",
+        "internal/sbi/processor/event_exposure.go",
+        "internal/sbi/processor/processor.go",
+        "internal/sbi/processor/notifier.go",
+        "internal/sbi/processor/generate_auth_data.go",
+        "internal/sbi/processor/parameter_provision.go",
+        "internal/sbi/processor/ue_context_management.go"
+      ],
+      "packages": [
+        "processor"
+      ],
+      "module_id": "mod-0005",
+      "function_ids": [
+        "fn-000151",
+        "fn-000152",
+        "fn-000153",
+        "fn-000154",
+        "fn-000155",
+        "fn-000156",
+        "fn-000157",
+        "fn-000158",
+        "fn-000159",
+        "fn-000160",
+        "fn-000161",
+        "fn-000162",
+        "fn-000163",
+        "fn-000164",
+        "fn-000165",
+        "fn-000166",
+        "fn-000167",
+        "fn-000168",
+        "fn-000169",
+        "fn-000170",
+        "fn-000171",
+        "fn-000172",
+        "fn-000173",
+        "fn-000174",
+        "fn-000175",
+        "fn-000176",
+        "fn-000177",
+        "fn-000178",
+        "fn-000179",
+        "fn-000180"
+      ],
+      "module_signals": [
+        "has_sbi"
+      ]
+    },
+    {
+      "name": "util",
+      "path": "internal/util",
+      "go_files": [
+        "internal/util/router_auth_check.go",
+        "internal/util/init_context.go",
+        "internal/util/search_nf_service.go",
+        "internal/util/util.go"
+      ],
+      "packages": [
+        "util"
+      ],
+      "module_id": "mod-0006",
+      "function_ids": [
+        "fn-000041",
+        "fn-000042"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "app",
+      "path": "pkg/app",
+      "go_files": [
+        "pkg/app/app.go",
+        "pkg/app/mock.go"
+      ],
+      "packages": [
+        "app"
+      ],
+      "module_id": "mod-0007",
+      "function_ids": [
+        "fn-000001",
+        "fn-000002",
+        "fn-000003",
+        "fn-000004",
+        "fn-000005"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "factory",
+      "path": "pkg/factory",
+      "go_files": [
+        "pkg/factory/config.go",
+        "pkg/factory/factory.go"
+      ],
+      "packages": [
+        "factory"
+      ],
+      "module_id": "mod-0008",
+      "function_ids": [
+        "fn-000020",
+        "fn-000021",
+        "fn-000022"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "service",
+      "path": "pkg/mockapp",
+      "go_files": [
+        "pkg/mockapp/mock.go"
+      ],
+      "packages": [
+        "service"
+      ],
+      "module_id": "mod-0009",
+      "function_ids": [
+        "fn-000006",
+        "fn-000007",
+        "fn-000008",
+        "fn-000009",
+        "fn-000010"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "service",
+      "path": "pkg/service",
+      "go_files": [
+        "pkg/service/init.go"
+      ],
+      "packages": [
+        "service"
+      ],
+      "module_id": "mod-0010",
+      "function_ids": [
+        "fn-000011",
+        "fn-000012",
+        "fn-000013",
+        "fn-000014",
+        "fn-000015",
+        "fn-000016",
+        "fn-000017",
+        "fn-000018",
+        "fn-000019"
+      ],
+      "module_signals": [
+        "generic"
+      ]
+    },
+    {
+      "name": "suci",
+      "path": "pkg/suci",
+      "go_files": [
+        "pkg/suci/suci.go"
+      ],
+      "packages": [
+        "suci"
+      ],
+      "module_id": "mod-0011",
+      "module_signals": [
+        "generic"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "kind": "function",
+      "name": "main",
+      "receiver_type": null,
+      "file": "cmd/main.go",
+      "line": 20,
+      "params_raw": "",
+      "calls": [
+        "recover",
+        "Fatalf",
+        "string",
+        "Stack"
+      ],
+      "func_id": "fn-000000"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogEnable",
+      "receiver_type": "MockApp",
+      "file": "pkg/app/mock.go",
+      "line": 72,
+      "params_raw": "enable bool",
+      "calls": [
+        "Helper",
+        "Call",
+        "SetLogEnable",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000001"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogLevel",
+      "receiver_type": "MockApp",
+      "file": "pkg/app/mock.go",
+      "line": 84,
+      "params_raw": "level string",
+      "calls": [
+        "Helper",
+        "Call",
+        "SetLogLevel",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000002"
+    },
+    {
+      "kind": "method",
+      "name": "SetReportCaller",
+      "receiver_type": "MockApp",
+      "file": "pkg/app/mock.go",
+      "line": 96,
+      "params_raw": "reportCaller bool",
+      "calls": [
+        "Helper",
+        "Call",
+        "SetReportCaller",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000003"
+    },
+    {
+      "kind": "method",
+      "name": "Start",
+      "receiver_type": "MockApp",
+      "file": "pkg/app/mock.go",
+      "line": 108,
+      "params_raw": "",
+      "calls": [
+        "Helper",
+        "Call",
+        "Start",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000004"
+    },
+    {
+      "kind": "method",
+      "name": "Terminate",
+      "receiver_type": "MockApp",
+      "file": "pkg/app/mock.go",
+      "line": 120,
+      "params_raw": "",
+      "calls": [
+        "Helper",
+        "Call",
+        "Terminate",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000005"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogEnable",
+      "receiver_type": "MockApp",
+      "file": "pkg/mockapp/mock.go",
+      "line": 88,
+      "params_raw": "enable bool",
+      "calls": [
+        "Helper",
+        "Call",
+        "SetLogEnable",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000006"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogLevel",
+      "receiver_type": "MockApp",
+      "file": "pkg/mockapp/mock.go",
+      "line": 100,
+      "params_raw": "level string",
+      "calls": [
+        "Helper",
+        "Call",
+        "SetLogLevel",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000007"
+    },
+    {
+      "kind": "method",
+      "name": "SetReportCaller",
+      "receiver_type": "MockApp",
+      "file": "pkg/mockapp/mock.go",
+      "line": 112,
+      "params_raw": "reportCaller bool",
+      "calls": [
+        "Helper",
+        "Call",
+        "SetReportCaller",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000008"
+    },
+    {
+      "kind": "method",
+      "name": "Start",
+      "receiver_type": "MockApp",
+      "file": "pkg/mockapp/mock.go",
+      "line": 124,
+      "params_raw": "",
+      "calls": [
+        "Helper",
+        "Call",
+        "Start",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000009"
+    },
+    {
+      "kind": "method",
+      "name": "Terminate",
+      "receiver_type": "MockApp",
+      "file": "pkg/mockapp/mock.go",
+      "line": 136,
+      "params_raw": "",
+      "calls": [
+        "Helper",
+        "Call",
+        "Terminate",
+        "RecordCallWithMethodType",
+        "TypeOf"
+      ],
+      "func_id": "fn-000010"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogEnable",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 70,
+      "params_raw": "enable bool",
+      "calls": [
+        "Infof"
+      ],
+      "func_id": "fn-000011"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogLevel",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 86,
+      "params_raw": "level string",
+      "calls": [
+        "ParseLevel",
+        "Warnf"
+      ],
+      "func_id": "fn-000012"
+    },
+    {
+      "kind": "method",
+      "name": "SetReportCaller",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 102,
+      "params_raw": "reportCaller bool",
+      "calls": [
+        "Infof"
+      ],
+      "func_id": "fn-000013"
+    },
+    {
+      "kind": "method",
+      "name": "Start",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 111,
+      "params_raw": "",
+      "calls": [
+        "Infoln",
+        "Add",
+        "listenShutdownEvent",
+        "Run",
+        "Background",
+        "Fatalf"
+      ],
+      "func_id": "fn-000014"
+    },
+    {
+      "kind": "method",
+      "name": "listenShutdownEvent",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 124,
+      "params_raw": "",
+      "calls": [
+        "recover",
+        "Fatalf",
+        "string",
+        "Stack",
+        "Done"
+      ],
+      "func_id": "fn-000015"
+    },
+    {
+      "kind": "method",
+      "name": "CallServerStop",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 137,
+      "params_raw": "",
+      "calls": [
+        "Stop"
+      ],
+      "func_id": "fn-000016"
+    },
+    {
+      "kind": "method",
+      "name": "Terminate",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 143,
+      "params_raw": "",
+      "calls": [
+        "cancel",
+        "terminateProcedure",
+        "Infof",
+        "CallServerStop",
+        "Consumer",
+        "SendDeregisterNFInstance",
+        "Model",
+        "Errorf"
+      ],
+      "func_id": "fn-000017"
+    },
+    {
+      "kind": "method",
+      "name": "terminateProcedure",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 147,
+      "params_raw": "",
+      "calls": [
+        "Infof",
+        "CallServerStop",
+        "Consumer",
+        "SendDeregisterNFInstance",
+        "Model",
+        "Errorf"
+      ],
+      "func_id": "fn-000018"
+    },
+    {
+      "kind": "method",
+      "name": "WaitRoutineStopped",
+      "receiver_type": "UdmApp",
+      "file": "pkg/service/init.go",
+      "line": 173,
+      "params_raw": "",
+      "calls": [
+        "Wait",
+        "Infof",
+        "CancelContext"
+      ],
+      "func_id": "fn-000019"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogEnable",
+      "receiver_type": "Config",
+      "file": "pkg/factory/config.go",
+      "line": 204,
+      "params_raw": "enable bool",
+      "calls": [
+        "Lock",
+        "Unlock",
+        "Warnf"
+      ],
+      "func_id": "fn-000020"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogLevel",
+      "receiver_type": "Config",
+      "file": "pkg/factory/config.go",
+      "line": 219,
+      "params_raw": "level string",
+      "calls": [
+        "Lock",
+        "Unlock",
+        "Warnf"
+      ],
+      "func_id": "fn-000021"
+    },
+    {
+      "kind": "method",
+      "name": "SetLogReportCaller",
+      "receiver_type": "Config",
+      "file": "pkg/factory/config.go",
+      "line": 233,
+      "params_raw": "reportCaller bool",
+      "calls": [
+        "Lock",
+        "Unlock",
+        "Warnf"
+      ],
+      "func_id": "fn-000022"
+    },
+    {
+      "kind": "method",
+      "name": "Init",
+      "receiver_type": "UdmUeContext",
+      "file": "internal/context/context.go",
+      "line": 91,
+      "params_raw": "",
+      "calls": [
+        "make"
+      ],
+      "func_id": "fn-000023"
+    },
+    {
+      "kind": "method",
+      "name": "CreateSubsDataSetsForUe",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 224,
+      "params_raw": "supi string, body models.UdmSdmSubscriptionDataSets",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000024"
+    },
+    {
+      "kind": "method",
+      "name": "CreateTraceDataforUe",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 233,
+      "params_raw": "supi string, body models.TraceData",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000025"
+    },
+    {
+      "kind": "method",
+      "name": "CreateSubscriptiontoNotifChange",
+      "receiver_type": "UdmUeContext",
+      "file": "internal/context/context.go",
+      "line": 242,
+      "params_raw": "subscriptionID string, body *models.SdmSubscription",
+      "calls": [],
+      "func_id": "fn-000026"
+    },
+    {
+      "kind": "method",
+      "name": "CreateSubstoNotifSharedData",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 249,
+      "params_raw": "subscriptionID string, body *models.SdmSubscription",
+      "calls": [
+        "Store",
+        "CreateUeContextInSmfDataforUe",
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000027"
+    },
+    {
+      "kind": "method",
+      "name": "CreateUeContextInSmfDataforUe",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 254,
+      "params_raw": "supi string, body models.UeContextInSmfData",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000028"
+    },
+    {
+      "kind": "method",
+      "name": "CreateSmfSelectionSubsDataforUe",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 263,
+      "params_raw": "supi string, body models.SmfSelectionSubscriptionData",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000029"
+    },
+    {
+      "kind": "method",
+      "name": "SetSmfSelectionSubsData",
+      "receiver_type": "UdmUeContext",
+      "file": "internal/context/context.go",
+      "line": 272,
+      "params_raw": "smfSelSubsData *models.SmfSelectionSubscriptionData",
+      "calls": [
+        "Lock",
+        "Unlock",
+        "SetSMSubsData"
+      ],
+      "func_id": "fn-000030"
+    },
+    {
+      "kind": "method",
+      "name": "SetSMSubsData",
+      "receiver_type": "UdmUeContext",
+      "file": "internal/context/context.go",
+      "line": 279,
+      "params_raw": "smSubsData map[string]models.SessionManagementSubscriptionData",
+      "calls": [
+        "Lock",
+        "Unlock",
+        "NewUdmUe",
+        "new",
+        "Init",
+        "Store"
+      ],
+      "func_id": "fn-000031"
+    },
+    {
+      "kind": "method",
+      "name": "CreateAccessMobilitySubsDataForUe",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 317,
+      "params_raw": "supi string,\n\tbody models.AccessAndMobilitySubscriptionData,",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000032"
+    },
+    {
+      "kind": "method",
+      "name": "SetAMSubsriptionData",
+      "receiver_type": "UdmUeContext",
+      "file": "internal/context/context.go",
+      "line": 328,
+      "params_raw": "amData *models.AccessAndMobilitySubscriptionData",
+      "calls": [
+        "Lock",
+        "Unlock",
+        "UdmAmf3gppRegContextExists",
+        "UdmUeFindBySupi"
+      ],
+      "func_id": "fn-000033"
+    },
+    {
+      "kind": "method",
+      "name": "CreateAmf3gppRegContext",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 358,
+      "params_raw": "supi string, body models.Amf3GppAccessRegistration",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000034"
+    },
+    {
+      "kind": "method",
+      "name": "CreateAmfNon3gppRegContext",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 366,
+      "params_raw": "supi string, body models.AmfNon3GppAccessRegistration",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000035"
+    },
+    {
+      "kind": "method",
+      "name": "CreateSmfRegContext",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 374,
+      "params_raw": "supi string, pduSessionID string",
+      "calls": [
+        "UdmUeFindBySupi",
+        "NewUdmUe"
+      ],
+      "func_id": "fn-000036"
+    },
+    {
+      "kind": "method",
+      "name": "InitNFService",
+      "receiver_type": "UDMContext",
+      "file": "internal/context/context.go",
+      "line": 467,
+      "params_raw": "serviceName []string, version string",
+      "calls": [
+        "Split",
+        "ServiceName",
+        "Itoa",
+        "GetIPv4Uri",
+        "int32"
+      ],
+      "func_id": "fn-000037"
+    },
+    {
+      "kind": "function",
+      "name": "Init",
+      "receiver_type": null,
+      "file": "internal/context/context.go",
+      "line": 34,
+      "params_raw": "",
+      "calls": [
+        "GetSelf",
+        "make",
+        "NewGenerator",
+        "InitUdmContext",
+        "AuthorizationCheck"
+      ],
+      "func_id": "fn-000038"
+    },
+    {
+      "kind": "function",
+      "name": "InitUdmContext",
+      "receiver_type": null,
+      "file": "internal/context/context.go",
+      "line": 103,
+      "params_raw": "context *UDMContext",
+      "calls": [
+        "Info",
+        "New",
+        "String",
+        "UriScheme",
+        "Getenv",
+        "Warn"
+      ],
+      "func_id": "fn-000039"
+    },
+    {
+      "kind": "function",
+      "name": "init",
+      "receiver_type": null,
+      "file": "internal/logger/logger.go",
+      "line": 31,
+      "params_raw": "",
+      "calls": [],
+      "func_id": "fn-000040"
+    },
+    {
+      "kind": "method",
+      "name": "Check",
+      "receiver_type": "RouterAuthorizationCheck",
+      "file": "internal/util/router_auth_check.go",
+      "line": 25,
+      "params_raw": "c *gin.Context, udmContext udm_context.NFContext",
+      "calls": [
+        "Get",
+        "AuthorizationCheck",
+        "Debugf",
+        "Error",
+        "JSON",
+        "Abort"
+      ],
+      "func_id": "fn-000041"
+    },
+    {
+      "kind": "function",
+      "name": "InitUDMContext",
+      "receiver_type": null,
+      "file": "internal/util/init_context.go",
+      "line": 14,
+      "params_raw": "udmContext *context.UDMContext",
+      "calls": [
+        "Info",
+        "New",
+        "String",
+        "UriScheme",
+        "Getenv",
+        "Warn"
+      ],
+      "func_id": "fn-000042"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetAmfNon3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 243,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infoln",
+        "Param",
+        "Query",
+        "Processor",
+        "GetAmfNon3gppAccessProcedure",
+        "HandleRegistrationAmfNon3gppAccess",
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON",
+        "Deserialize",
+        "Errorln",
+        "Infof",
+        "RegisterAmfNon3gppAccessProcedure"
+      ],
+      "func_id": "fn-000043"
+    },
+    {
+      "kind": "method",
+      "name": "HandleRegistrationAmfNon3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 255,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000044"
+    },
+    {
+      "kind": "method",
+      "name": "HandleRegistrationAmf3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 292,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000045"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateAmfNon3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 329,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000046"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateAmf3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 365,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000047"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeregistrationSmsfNon3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 402,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000048"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeregistrationSmsf3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 407,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000049"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSmsfNon3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 412,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000050"
+    },
+    {
+      "kind": "method",
+      "name": "HandleRegistrationSmsfNon3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 417,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000051"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateSMSFReg3GPP",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 422,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000052"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSmsf3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 427,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000053"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeregistrationSmfRegistrations",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 432,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infof",
+        "ByName",
+        "Processor",
+        "DeregistrationSmfRegistrationsProcedure",
+        "HandleRegistrationSmfRegistrations",
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON",
+        "Deserialize",
+        "Errorln",
+        "RegistrationSmfRegistrationsProcedure"
+      ],
+      "func_id": "fn-000054"
+    },
+    {
+      "kind": "method",
+      "name": "HandleRegistrationSmfRegistrations",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 442,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000055"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetAmf3gppAccess",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 485,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infof",
+        "Param",
+        "Query",
+        "Processor",
+        "GetAmf3gppAccessProcedure",
+        "HandleDeregAMF",
+        "JSON"
+      ],
+      "func_id": "fn-000056"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeregAMF",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 494,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000057"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetIpSmGwRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 498,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000058"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetLocationInfo",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 502,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000059"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetNwdafRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 506,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000060"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetRegistrations",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 510,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000061"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSmfRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 514,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000062"
+    },
+    {
+      "kind": "method",
+      "name": "HandleIpSmGwDeregistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 518,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000063"
+    },
+    {
+      "kind": "method",
+      "name": "HandleIpSmGwRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 522,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000064"
+    },
+    {
+      "kind": "method",
+      "name": "HandleNwdafDeregistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 526,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000065"
+    },
+    {
+      "kind": "method",
+      "name": "HandleNwdafRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 530,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000066"
+    },
+    {
+      "kind": "method",
+      "name": "HandlePeiUpdate",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 534,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000067"
+    },
+    {
+      "kind": "method",
+      "name": "HandleRetrieveSmfRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 538,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000068"
+    },
+    {
+      "kind": "method",
+      "name": "HandleSendRoutingInfoSm",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 542,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000069"
+    },
+    {
+      "kind": "method",
+      "name": "HandleTriggerPCSCFRestoration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 546,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000070"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateNwdafRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 550,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000071"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateRoamingInformation",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 554,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000072"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateSmfRegistration",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_uecontextmanagement.go",
+      "line": 558,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000073"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetAmData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 28,
+      "params_raw": "c *gin.Context",
+      "calls": [],
+      "func_id": "fn-000074"
+    },
+    {
+      "kind": "method",
+      "name": "HandleInfo",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 70,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000075"
+    },
+    {
+      "kind": "method",
+      "name": "HandlePutUpuAck",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 75,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000076"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSmfSelectData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 80,
+      "params_raw": "c *gin.Context",
+      "calls": [],
+      "func_id": "fn-000077"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSmsMngData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 100,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000078"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSmsData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 105,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000079"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSupi",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 110,
+      "params_raw": "c *gin.Context",
+      "calls": [],
+      "func_id": "fn-000080"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSharedData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 132,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infof",
+        "QueryArray",
+        "Processor",
+        "GetSharedDataProcedure",
+        "HandleSubscribeToSharedData",
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON",
+        "Deserialize",
+        "Errorln",
+        "SubscribeToSharedDataProcedure"
+      ],
+      "func_id": "fn-000081"
+    },
+    {
+      "kind": "method",
+      "name": "HandleSubscribeToSharedData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 142,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000082"
+    },
+    {
+      "kind": "method",
+      "name": "HandleSubscribe",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 177,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000083"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUnsubscribe",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 213,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infof",
+        "ByName",
+        "Processor",
+        "UnsubscribeProcedure",
+        "HandleUnsubscribeForSharedData",
+        "UnsubscribeForSharedDataProcedure"
+      ],
+      "func_id": "fn-000084"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUnsubscribeForSharedData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 223,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infof",
+        "ByName",
+        "Processor",
+        "UnsubscribeForSharedDataProcedure",
+        "HandleModify",
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON",
+        "Deserialize",
+        "Errorln",
+        "ModifyProcedure"
+      ],
+      "func_id": "fn-000085"
+    },
+    {
+      "kind": "method",
+      "name": "HandleModify",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 231,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000086"
+    },
+    {
+      "kind": "method",
+      "name": "HandleModifyForSharedData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 268,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000087"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetTraceData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 305,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infof",
+        "ByName",
+        "Query",
+        "Processor",
+        "GetTraceDataProcedure",
+        "HandleGetUeContextInSmfData",
+        "GetUeContextInSmfDataProcedure"
+      ],
+      "func_id": "fn-000088"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetUeContextInSmfData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 315,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Infof",
+        "ByName",
+        "Query",
+        "Processor",
+        "GetUeContextInSmfDataProcedure",
+        "HandleGetUeContextInSmsfData",
+        "JSON"
+      ],
+      "func_id": "fn-000089"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetUeContextInSmsfData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 325,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000090"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetNssai",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 330,
+      "params_raw": "c *gin.Context",
+      "calls": [],
+      "func_id": "fn-000091"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetSmData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 350,
+      "params_raw": "c *gin.Context",
+      "calls": [],
+      "func_id": "fn-000092"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetIdTranslationResult",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 374,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Set",
+        "Query",
+        "Infof",
+        "ByName",
+        "Processor",
+        "GetIdTranslationResultProcedure",
+        "HandleGetMultipleIdentifiers",
+        "JSON"
+      ],
+      "func_id": "fn-000093"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetMultipleIdentifiers",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 384,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000094"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetGroupIdentifiers",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 388,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000095"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetLcsBcaData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 392,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000096"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetLcsMoData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 396,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000097"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetLcsPrivacyData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 400,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000098"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetMbsData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 404,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000099"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetProseData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 408,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000100"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetUcData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 412,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000101"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetUeCtxInAmfData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 416,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000102"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetV2xData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 420,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000103"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetIndividualSharedData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 424,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000104"
+    },
+    {
+      "kind": "method",
+      "name": "HandleCAGAck",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 428,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000105"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetEcrData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 432,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000106"
+    },
+    {
+      "kind": "method",
+      "name": "HandleSNSSAIsAck",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 436,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000107"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateSORInfo",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 440,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000108"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpuAck",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 444,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000109"
+    },
+    {
+      "kind": "method",
+      "name": "OneLayerPathHandlerFunc",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 448,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Param",
+        "getOneLayerRoutes",
+        "Contains",
+        "HandlerFunc"
+      ],
+      "func_id": "fn-000110"
+    },
+    {
+      "kind": "method",
+      "name": "TwoLayerPathHandlerFunc",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 467,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Param",
+        "Infoln",
+        "HandleUnsubscribeForSharedData"
+      ],
+      "func_id": "fn-000111"
+    },
+    {
+      "kind": "method",
+      "name": "ThreeLayerPathHandlerFunc",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_subscriberdatamanagement.go",
+      "line": 509,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Param",
+        "append",
+        "HandleUnsubscribe"
+      ],
+      "func_id": "fn-000112"
+    },
+    {
+      "kind": "method",
+      "name": "HandleServiceSpecificAuthorization",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_servicespecificauthorization.go",
+      "line": 34,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000113"
+    },
+    {
+      "kind": "method",
+      "name": "HandleServiceSpecificAuthorizationRemoval",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_servicespecificauthorization.go",
+      "line": 38,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000114"
+    },
+    {
+      "kind": "method",
+      "name": "startServer",
+      "receiver_type": "Server",
+      "file": "internal/sbi/server.go",
+      "line": 75,
+      "params_raw": "wg *sync.WaitGroup",
+      "calls": [
+        "recover",
+        "Fatalf",
+        "string",
+        "Stack",
+        "Terminate",
+        "Done"
+      ],
+      "func_id": "fn-000115"
+    },
+    {
+      "kind": "method",
+      "name": "Shutdown",
+      "receiver_type": "Server",
+      "file": "internal/sbi/server.go",
+      "line": 108,
+      "params_raw": "",
+      "calls": [
+        "shutdownHttpServer",
+        "Stop",
+        "Infof",
+        "server",
+        "WithTimeout",
+        "Background",
+        "cancel",
+        "Shutdown",
+        "Errorf"
+      ],
+      "func_id": "fn-000116"
+    },
+    {
+      "kind": "method",
+      "name": "Stop",
+      "receiver_type": "Server",
+      "file": "internal/sbi/server.go",
+      "line": 112,
+      "params_raw": "",
+      "calls": [
+        "Infof",
+        "server",
+        "WithTimeout",
+        "Background",
+        "cancel",
+        "Shutdown",
+        "Errorf"
+      ],
+      "func_id": "fn-000117"
+    },
+    {
+      "kind": "method",
+      "name": "shutdownHttpServer",
+      "receiver_type": "Server",
+      "file": "internal/sbi/server.go",
+      "line": 125,
+      "params_raw": "",
+      "calls": [],
+      "func_id": "fn-000118"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDataChangeNotificationToNF",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_httpcallback.go",
+      "line": 31,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000119"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdate",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 108,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000120"
+    },
+    {
+      "kind": "method",
+      "name": "HandleCreate5GMBSGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 155,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000121"
+    },
+    {
+      "kind": "method",
+      "name": "HandleCreate5GVNGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 159,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000122"
+    },
+    {
+      "kind": "method",
+      "name": "HandleCreatePPDataEntry",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 163,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000123"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDelete5GMBSGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 167,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000124"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDelete5GVNGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 171,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000125"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeletePPDataEntry",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 175,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000126"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGet5GMBSGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 179,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000127"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGet5GVNGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 183,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000128"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetPPDataEntry",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 187,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000129"
+    },
+    {
+      "kind": "method",
+      "name": "HandleModify5GMBSGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 191,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000130"
+    },
+    {
+      "kind": "method",
+      "name": "HandleModify5GVNGroup",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_parameterprovision.go",
+      "line": 195,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000131"
+    },
+    {
+      "kind": "method",
+      "name": "HandleConfirmAuth",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 25,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000132"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGenerateAuthData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 61,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Error",
+        "Errorf",
+        "JSON"
+      ],
+      "func_id": "fn-000133"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeleteAuth",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 97,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000134"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGenerateAv",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 101,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000135"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGenerateGbaAv",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 105,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000136"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGenerateProseAV",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 109,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000137"
+    },
+    {
+      "kind": "method",
+      "name": "HandleGetRgAuthData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 113,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000138"
+    },
+    {
+      "kind": "method",
+      "name": "UEAUTwoLayerPathHandlerFunc",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 117,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Param",
+        "HandleConfirmAuth"
+      ],
+      "func_id": "fn-000139"
+    },
+    {
+      "kind": "method",
+      "name": "UEAUThreeLayerPathHandlerFunc",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueauthentication.go",
+      "line": 138,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "Param",
+        "HandleDeleteAuth"
+      ],
+      "func_id": "fn-000140"
+    },
+    {
+      "kind": "method",
+      "name": "HandleAuthorizeNiddData",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_niddauthentication.go",
+      "line": 27,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000141"
+    },
+    {
+      "kind": "method",
+      "name": "HandleProvideLocationInfo",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_mt.go",
+      "line": 34,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000142"
+    },
+    {
+      "kind": "method",
+      "name": "HandleQueryUeInfo",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_mt.go",
+      "line": 38,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000143"
+    },
+    {
+      "kind": "method",
+      "name": "HandleReportSMDeliveryStatus",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_reportsmdeliverystatus.go",
+      "line": 27,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000144"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeconceal",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_ueid.go",
+      "line": 27,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "JSON"
+      ],
+      "func_id": "fn-000145"
+    },
+    {
+      "kind": "method",
+      "name": "HandleCreateEeSubscription",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_eventexposure.go",
+      "line": 46,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Errorf",
+        "Error",
+        "JSON"
+      ],
+      "func_id": "fn-000146"
+    },
+    {
+      "kind": "method",
+      "name": "HandleDeleteEeSubscription",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_eventexposure.go",
+      "line": 82,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "ByName",
+        "Processor",
+        "DeleteEeSubscriptionProcedure",
+        "HandleUpdateEeSubscription",
+        "GetRawData",
+        "Errorf",
+        "Error",
+        "JSON",
+        "Deserialize",
+        "Errorln",
+        "Infoln",
+        "Warnln",
+        "UpdateEeSubscriptionProcedure"
+      ],
+      "func_id": "fn-000147"
+    },
+    {
+      "kind": "method",
+      "name": "HandleUpdateEeSubscription",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_eventexposure.go",
+      "line": 89,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "GetRawData",
+        "Errorf",
+        "Error",
+        "JSON"
+      ],
+      "func_id": "fn-000148"
+    },
+    {
+      "kind": "method",
+      "name": "HandleIndex",
+      "receiver_type": "Server",
+      "file": "internal/sbi/api_eventexposure.go",
+      "line": 127,
+      "params_raw": "c *gin.Context",
+      "calls": [
+        "String"
+      ],
+      "func_id": "fn-000149"
+    },
+    {
+      "kind": "function",
+      "name": "AddService",
+      "receiver_type": null,
+      "file": "internal/sbi/router.go",
+      "line": 23,
+      "params_raw": "group *gin.RouterGroup, routes []Route",
+      "calls": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH"
+      ],
+      "func_id": "fn-000150"
+    },
+    {
+      "kind": "method",
+      "name": "GetAmDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 18,
+      "params_raw": "c *gin.Context, supi string, plmnID string, supportedFeatures string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000151"
+    },
+    {
+      "kind": "method",
+      "name": "GetIdTranslationResultProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 60,
+      "params_raw": "c *gin.Context, gpsi string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000152"
+    },
+    {
+      "kind": "method",
+      "name": "GetSupiProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 106,
+      "params_raw": "c *gin.Context,\n\tsupi string,\n\tplmnID string,\n\tdataSetNames []string,\n\tsupportedFeatures string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000153"
+    },
+    {
+      "kind": "method",
+      "name": "GetSharedDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 317,
+      "params_raw": "c *gin.Context, sharedDataIds []string, supportedFeatures string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000154"
+    },
+    {
+      "kind": "method",
+      "name": "GetSmDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 354,
+      "params_raw": "c *gin.Context,\n\tsupi string,\n\tplmnID string,\n\tDnn string,\n\tSnssai string,\n\tsupportedFeatures string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000155"
+    },
+    {
+      "kind": "method",
+      "name": "GetNssaiProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 438,
+      "params_raw": "c *gin.Context, supi string, plmnID string, supportedFeatures string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000156"
+    },
+    {
+      "kind": "method",
+      "name": "GetSmfSelectDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 480,
+      "params_raw": "c *gin.Context, supi string, plmnID string, supportedFeatures string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000157"
+    },
+    {
+      "kind": "method",
+      "name": "SubscribeToSharedDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 523,
+      "params_raw": "c *gin.Context, sdmSubscription *models.SdmSubscription",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000158"
+    },
+    {
+      "kind": "method",
+      "name": "SubscribeProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 557,
+      "params_raw": "c *gin.Context, sdmSubscription *models.SdmSubscription, supi string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000159"
+    },
+    {
+      "kind": "method",
+      "name": "UnsubscribeForSharedDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 595,
+      "params_raw": "c *gin.Context, subscriptionID string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000160"
+    },
+    {
+      "kind": "method",
+      "name": "UnsubscribeProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 623,
+      "params_raw": "c *gin.Context, supi string, subscriptionID string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000161"
+    },
+    {
+      "kind": "method",
+      "name": "ModifyProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 655,
+      "params_raw": "c *gin.Context,\n\tsdmSubsModification *models.SdmSubsModification,\n\tsupi string,\n\tsubscriptionID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000162"
+    },
+    {
+      "kind": "method",
+      "name": "ModifyForSharedDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 698,
+      "params_raw": "c *gin.Context,\n\tsdmSubsModification *models.SdmSubsModification,\n\tsupi string,\n\tsubscriptionID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000163"
+    },
+    {
+      "kind": "method",
+      "name": "GetTraceDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 740,
+      "params_raw": "c *gin.Context, supi string, plmnID string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000164"
+    },
+    {
+      "kind": "method",
+      "name": "GetUeContextInSmfDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/subscriber_data_management.go",
+      "line": 783,
+      "params_raw": "c *gin.Context, supi string, supportedFeatures string",
+      "calls": [
+        "Consumer",
+        "CreateUDMClientToUDR",
+        "ProblemDetailsSystemFailure",
+        "Error",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000165"
+    },
+    {
+      "kind": "method",
+      "name": "CreateEeSubscriptionProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/event_exposure.go",
+      "line": 16,
+      "params_raw": "c *gin.Context, ueIdentity string,\n\teesubscription models.UdmEeEeSubscription,",
+      "calls": [
+        "Context",
+        "Debugf",
+        "GPSI",
+        "HasPrefix",
+        "UdmUeFindByGpsi",
+        "Allocate",
+        "JSON",
+        "int",
+        "Itoa",
+        "Range"
+      ],
+      "func_id": "fn-000166"
+    },
+    {
+      "kind": "method",
+      "name": "DeleteEeSubscriptionProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/event_exposure.go",
+      "line": 111,
+      "params_raw": "c *gin.Context, ueIdentity string, subscriptionID string",
+      "calls": [
+        "Context",
+        "HasPrefix",
+        "UdmUeFindByGpsi",
+        "delete",
+        "Range"
+      ],
+      "func_id": "fn-000167"
+    },
+    {
+      "kind": "method",
+      "name": "UpdateEeSubscriptionProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/event_exposure.go",
+      "line": 147,
+      "params_raw": "c *gin.Context, ueIdentity string, subscriptionID string,\n\tpatchList []models.PatchItem,",
+      "calls": [
+        "Context",
+        "HasPrefix",
+        "UdmUeFindByGpsi",
+        "Debugf",
+        "Status",
+        "JSON",
+        "int",
+        "Range"
+      ],
+      "func_id": "fn-000168"
+    },
+    {
+      "kind": "method",
+      "name": "DataChangeNotificationProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/notifier.go",
+      "line": 13,
+      "params_raw": "c *gin.Context,\n\tnotifyItems []models.NotifyItem,\n\tsupi string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000169"
+    },
+    {
+      "kind": "method",
+      "name": "ConfirmAuthDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/generate_auth_data.go",
+      "line": 77,
+      "params_raw": "c *gin.Context,\n\tauthEvent models.AuthEvent,\n\tsupi string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000170"
+    },
+    {
+      "kind": "method",
+      "name": "GenerateAuthDataProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/generate_auth_data.go",
+      "line": 115,
+      "params_raw": "c *gin.Context,\n\tauthInfoRequest models.AuthenticationInfoRequest,\n\tsupiOrSuci string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000171"
+    },
+    {
+      "kind": "method",
+      "name": "UpdateProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/parameter_provision.go",
+      "line": 13,
+      "params_raw": "c *gin.Context,\n\tupdateRequest models.PpData,\n\tgpsi string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000172"
+    },
+    {
+      "kind": "method",
+      "name": "GetAmf3gppAccessProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 17,
+      "params_raw": "c *gin.Context, ueID string, supportedFeatures string",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000173"
+    },
+    {
+      "kind": "method",
+      "name": "GetAmfNon3gppAccessProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 50,
+      "params_raw": "c *gin.Context, queryAmfContextNon3gppParamOpts Nudr_DataRepository.\n\tQueryAmfContextNon3gppRequest, ueID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000174"
+    },
+    {
+      "kind": "method",
+      "name": "RegistrationAmf3gppAccessProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 79,
+      "params_raw": "c *gin.Context,\n\tregisterRequest models.Amf3GppAccessRegistration,\n\tueID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000175"
+    },
+    {
+      "kind": "method",
+      "name": "RegisterAmfNon3gppAccessProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 157,
+      "params_raw": "c *gin.Context,\n\tregisterRequest models.AmfNon3GppAccessRegistration,\n\tueID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000176"
+    },
+    {
+      "kind": "method",
+      "name": "UpdateAmf3gppAccessProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 216,
+      "params_raw": "c *gin.Context,\n\trequest models.Amf3GppAccessRegistrationModification,\n\tueID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000177"
+    },
+    {
+      "kind": "method",
+      "name": "UpdateAmfNon3gppAccessProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 324,
+      "params_raw": "c *gin.Context,\n\trequest models.AmfNon3GppAccessRegistrationModification,\n\tueID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000178"
+    },
+    {
+      "kind": "method",
+      "name": "DeregistrationSmfRegistrationsProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 426,
+      "params_raw": "c *gin.Context,\n\tueID string,\n\tpduSessionID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000179"
+    },
+    {
+      "kind": "method",
+      "name": "RegistrationSmfRegistrationsProcedure",
+      "receiver_type": "Processor",
+      "file": "internal/sbi/processor/ue_context_management.go",
+      "line": 470,
+      "params_raw": "c *gin.Context,\n\tsmfRegistration *models.SmfRegistration,\n\tueID string,\n\tpduSessionID string,",
+      "calls": [
+        "Context",
+        "GetTokenCtx",
+        "JSON",
+        "int"
+      ],
+      "func_id": "fn-000180"
+    }
+  ],
+  "call_graph": {
+    "edge_precision": "name_match_coarse",
+    "edges": [
+      {
+        "from": "fn-000001",
+        "to": "fn-000001",
+        "label": "SetLogEnable"
+      },
+      {
+        "from": "fn-000001",
+        "to": "fn-000006",
+        "label": "SetLogEnable"
+      },
+      {
+        "from": "fn-000001",
+        "to": "fn-000011",
+        "label": "SetLogEnable"
+      },
+      {
+        "from": "fn-000002",
+        "to": "fn-000002",
+        "label": "SetLogLevel"
+      },
+      {
+        "from": "fn-000002",
+        "to": "fn-000007",
+        "label": "SetLogLevel"
+      },
+      {
+        "from": "fn-000002",
+        "to": "fn-000012",
+        "label": "SetLogLevel"
+      },
+      {
+        "from": "fn-000003",
+        "to": "fn-000003",
+        "label": "SetReportCaller"
+      },
+      {
+        "from": "fn-000003",
+        "to": "fn-000008",
+        "label": "SetReportCaller"
+      },
+      {
+        "from": "fn-000003",
+        "to": "fn-000013",
+        "label": "SetReportCaller"
+      },
+      {
+        "from": "fn-000004",
+        "to": "fn-000004",
+        "label": "Start"
+      },
+      {
+        "from": "fn-000004",
+        "to": "fn-000009",
+        "label": "Start"
+      },
+      {
+        "from": "fn-000004",
+        "to": "fn-000014",
+        "label": "Start"
+      },
+      {
+        "from": "fn-000005",
+        "to": "fn-000005",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000005",
+        "to": "fn-000010",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000005",
+        "to": "fn-000017",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000006",
+        "to": "fn-000001",
+        "label": "SetLogEnable"
+      },
+      {
+        "from": "fn-000006",
+        "to": "fn-000006",
+        "label": "SetLogEnable"
+      },
+      {
+        "from": "fn-000006",
+        "to": "fn-000011",
+        "label": "SetLogEnable"
+      },
+      {
+        "from": "fn-000007",
+        "to": "fn-000002",
+        "label": "SetLogLevel"
+      },
+      {
+        "from": "fn-000007",
+        "to": "fn-000007",
+        "label": "SetLogLevel"
+      },
+      {
+        "from": "fn-000007",
+        "to": "fn-000012",
+        "label": "SetLogLevel"
+      },
+      {
+        "from": "fn-000008",
+        "to": "fn-000003",
+        "label": "SetReportCaller"
+      },
+      {
+        "from": "fn-000008",
+        "to": "fn-000008",
+        "label": "SetReportCaller"
+      },
+      {
+        "from": "fn-000008",
+        "to": "fn-000013",
+        "label": "SetReportCaller"
+      },
+      {
+        "from": "fn-000009",
+        "to": "fn-000004",
+        "label": "Start"
+      },
+      {
+        "from": "fn-000009",
+        "to": "fn-000009",
+        "label": "Start"
+      },
+      {
+        "from": "fn-000009",
+        "to": "fn-000014",
+        "label": "Start"
+      },
+      {
+        "from": "fn-000010",
+        "to": "fn-000005",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000010",
+        "to": "fn-000010",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000010",
+        "to": "fn-000017",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000014",
+        "to": "fn-000015",
+        "label": "listenShutdownEvent"
+      },
+      {
+        "from": "fn-000016",
+        "to": "fn-000117",
+        "label": "Stop"
+      },
+      {
+        "from": "fn-000017",
+        "to": "fn-000018",
+        "label": "terminateProcedure"
+      },
+      {
+        "from": "fn-000017",
+        "to": "fn-000016",
+        "label": "CallServerStop"
+      },
+      {
+        "from": "fn-000018",
+        "to": "fn-000016",
+        "label": "CallServerStop"
+      },
+      {
+        "from": "fn-000027",
+        "to": "fn-000028",
+        "label": "CreateUeContextInSmfDataforUe"
+      },
+      {
+        "from": "fn-000030",
+        "to": "fn-000031",
+        "label": "SetSMSubsData"
+      },
+      {
+        "from": "fn-000031",
+        "to": "fn-000023",
+        "label": "Init"
+      },
+      {
+        "from": "fn-000031",
+        "to": "fn-000038",
+        "label": "Init"
+      },
+      {
+        "from": "fn-000038",
+        "to": "fn-000039",
+        "label": "InitUdmContext"
+      },
+      {
+        "from": "fn-000043",
+        "to": "fn-000174",
+        "label": "GetAmfNon3gppAccessProcedure"
+      },
+      {
+        "from": "fn-000043",
+        "to": "fn-000044",
+        "label": "HandleRegistrationAmfNon3gppAccess"
+      },
+      {
+        "from": "fn-000043",
+        "to": "fn-000176",
+        "label": "RegisterAmfNon3gppAccessProcedure"
+      },
+      {
+        "from": "fn-000054",
+        "to": "fn-000179",
+        "label": "DeregistrationSmfRegistrationsProcedure"
+      },
+      {
+        "from": "fn-000054",
+        "to": "fn-000055",
+        "label": "HandleRegistrationSmfRegistrations"
+      },
+      {
+        "from": "fn-000054",
+        "to": "fn-000180",
+        "label": "RegistrationSmfRegistrationsProcedure"
+      },
+      {
+        "from": "fn-000056",
+        "to": "fn-000173",
+        "label": "GetAmf3gppAccessProcedure"
+      },
+      {
+        "from": "fn-000056",
+        "to": "fn-000057",
+        "label": "HandleDeregAMF"
+      },
+      {
+        "from": "fn-000081",
+        "to": "fn-000154",
+        "label": "GetSharedDataProcedure"
+      },
+      {
+        "from": "fn-000081",
+        "to": "fn-000082",
+        "label": "HandleSubscribeToSharedData"
+      },
+      {
+        "from": "fn-000081",
+        "to": "fn-000158",
+        "label": "SubscribeToSharedDataProcedure"
+      },
+      {
+        "from": "fn-000084",
+        "to": "fn-000161",
+        "label": "UnsubscribeProcedure"
+      },
+      {
+        "from": "fn-000084",
+        "to": "fn-000085",
+        "label": "HandleUnsubscribeForSharedData"
+      },
+      {
+        "from": "fn-000084",
+        "to": "fn-000160",
+        "label": "UnsubscribeForSharedDataProcedure"
+      },
+      {
+        "from": "fn-000085",
+        "to": "fn-000160",
+        "label": "UnsubscribeForSharedDataProcedure"
+      },
+      {
+        "from": "fn-000085",
+        "to": "fn-000086",
+        "label": "HandleModify"
+      },
+      {
+        "from": "fn-000085",
+        "to": "fn-000162",
+        "label": "ModifyProcedure"
+      },
+      {
+        "from": "fn-000088",
+        "to": "fn-000164",
+        "label": "GetTraceDataProcedure"
+      },
+      {
+        "from": "fn-000088",
+        "to": "fn-000089",
+        "label": "HandleGetUeContextInSmfData"
+      },
+      {
+        "from": "fn-000088",
+        "to": "fn-000165",
+        "label": "GetUeContextInSmfDataProcedure"
+      },
+      {
+        "from": "fn-000089",
+        "to": "fn-000165",
+        "label": "GetUeContextInSmfDataProcedure"
+      },
+      {
+        "from": "fn-000089",
+        "to": "fn-000090",
+        "label": "HandleGetUeContextInSmsfData"
+      },
+      {
+        "from": "fn-000093",
+        "to": "fn-000152",
+        "label": "GetIdTranslationResultProcedure"
+      },
+      {
+        "from": "fn-000093",
+        "to": "fn-000094",
+        "label": "HandleGetMultipleIdentifiers"
+      },
+      {
+        "from": "fn-000111",
+        "to": "fn-000085",
+        "label": "HandleUnsubscribeForSharedData"
+      },
+      {
+        "from": "fn-000112",
+        "to": "fn-000084",
+        "label": "HandleUnsubscribe"
+      },
+      {
+        "from": "fn-000115",
+        "to": "fn-000005",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000115",
+        "to": "fn-000010",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000115",
+        "to": "fn-000017",
+        "label": "Terminate"
+      },
+      {
+        "from": "fn-000116",
+        "to": "fn-000118",
+        "label": "shutdownHttpServer"
+      },
+      {
+        "from": "fn-000116",
+        "to": "fn-000117",
+        "label": "Stop"
+      },
+      {
+        "from": "fn-000116",
+        "to": "fn-000116",
+        "label": "Shutdown"
+      },
+      {
+        "from": "fn-000117",
+        "to": "fn-000116",
+        "label": "Shutdown"
+      },
+      {
+        "from": "fn-000139",
+        "to": "fn-000132",
+        "label": "HandleConfirmAuth"
+      },
+      {
+        "from": "fn-000140",
+        "to": "fn-000134",
+        "label": "HandleDeleteAuth"
+      },
+      {
+        "from": "fn-000147",
+        "to": "fn-000167",
+        "label": "DeleteEeSubscriptionProcedure"
+      },
+      {
+        "from": "fn-000147",
+        "to": "fn-000148",
+        "label": "HandleUpdateEeSubscription"
+      },
+      {
+        "from": "fn-000147",
+        "to": "fn-000168",
+        "label": "UpdateEeSubscriptionProcedure"
+      }
+    ],
+    "nodes_count": 181
+  },
+  "entry_candidates": {
+    "sbi_handlers": [
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetAmfNon3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 243,
+        "func_id": "fn-000043"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleRegistrationAmfNon3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 255,
+        "func_id": "fn-000044"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleRegistrationAmf3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 292,
+        "func_id": "fn-000045"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleUpdateAmfNon3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 329,
+        "func_id": "fn-000046"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleUpdateAmf3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 365,
+        "func_id": "fn-000047"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleDeregistrationSmsfNon3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 402,
+        "func_id": "fn-000048"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleDeregistrationSmsf3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 407,
+        "func_id": "fn-000049"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetSmsfNon3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 412,
+        "func_id": "fn-000050"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleRegistrationSmsfNon3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 417,
+        "func_id": "fn-000051"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleUpdateSMSFReg3GPP",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 422,
+        "func_id": "fn-000052"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetSmsf3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 427,
+        "func_id": "fn-000053"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleDeregistrationSmfRegistrations",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 432,
+        "func_id": "fn-000054"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleRegistrationSmfRegistrations",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 442,
+        "func_id": "fn-000055"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetAmf3gppAccess",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 485,
+        "func_id": "fn-000056"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleDeregAMF",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 494,
+        "func_id": "fn-000057"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetIpSmGwRegistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 498,
+        "func_id": "fn-000058"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetLocationInfo",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 502,
+        "func_id": "fn-000059"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetNwdafRegistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 506,
+        "func_id": "fn-000060"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetRegistrations",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 510,
+        "func_id": "fn-000061"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleGetSmfRegistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 514,
+        "func_id": "fn-000062"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleIpSmGwDeregistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 518,
+        "func_id": "fn-000063"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleIpSmGwRegistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 522,
+        "func_id": "fn-000064"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleNwdafDeregistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 526,
+        "func_id": "fn-000065"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleNwdafRegistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 530,
+        "func_id": "fn-000066"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandlePeiUpdate",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 534,
+        "func_id": "fn-000067"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleRetrieveSmfRegistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 538,
+        "func_id": "fn-000068"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleSendRoutingInfoSm",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 542,
+        "func_id": "fn-000069"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleTriggerPCSCFRestoration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 546,
+        "func_id": "fn-000070"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleUpdateNwdafRegistration",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 550,
+        "func_id": "fn-000071"
+      },
+      {
+        "kind": "sbi_http_handler",
+        "name": "HandleUpdateRoamingInformation",
+        "file": "internal/sbi/api_uecontextmanagement.go",
+        "line": 554,
+        "func_id": "fn-000072"
+      }
+    ],
+    "protocol_handlers": []
+  }
+}

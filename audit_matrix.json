@@ -1,0 +1,831 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-04-12T08:52:58.245435+00:00",
+  "rows": [
+    "mod-0000",
+    "mod-0001",
+    "mod-0002",
+    "mod-0003",
+    "mod-0004",
+    "mod-0005",
+    "mod-0006",
+    "mod-0007",
+    "mod-0008",
+    "mod-0009",
+    "mod-0010",
+    "mod-0011"
+  ],
+  "columns": [
+    "SBI_AUTHORIZATION",
+    "PROTOCOL_PARSING_VALIDATION",
+    "PFCP_SESSION_OWNERSHIP",
+    "TEID_FTEID_MANAGEMENT",
+    "CRYPTO_KEY_MANAGEMENT",
+    "SENSITIVE_ASSET_LEAKAGE",
+    "CONCURRENCY_LIFECYCLE",
+    "ERROR_HANDLING_INFOLEAK",
+    "DOS_RESOURCE_LIMITS",
+    "GENERAL_GO_SECURITY_TRAPS"
+  ],
+  "cells": {
+    "mod-0000": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0001": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "CRYPTO-KEY-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "SENS-LEAK-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "CONC-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0002": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "SENS-LEAK-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0003": {
+      "SBI_AUTHORIZATION": {
+        "score": 6,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "SBI-AUTH-001",
+            "hits": [
+              "module_path_contains"
+            ]
+          }
+        ]
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 2,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 2,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "SENS-LEAK-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "DOS-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0004": {
+      "SBI_AUTHORIZATION": {
+        "score": 6,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "SBI-AUTH-001",
+            "hits": [
+              "module_path_contains"
+            ]
+          }
+        ]
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 2,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 2,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "SENS-LEAK-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "DOS-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0005": {
+      "SBI_AUTHORIZATION": {
+        "score": 6,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "SBI-AUTH-001",
+            "hits": [
+              "module_path_contains"
+            ]
+          }
+        ]
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 2,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 2,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "SENS-LEAK-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 1,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "DOS-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 4,
+        "coverage": "medium",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0006": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0007": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0008": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0009": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0010": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    },
+    "mod-0011": {
+      "SBI_AUTHORIZATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PROTOCOL_PARSING_VALIDATION": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "PFCP_SESSION_OWNERSHIP": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "TEID_FTEID_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CRYPTO_KEY_MANAGEMENT": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "SENSITIVE_ASSET_LEAKAGE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "CONCURRENCY_LIFECYCLE": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "ERROR_HANDLING_INFOLEAK": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "DOS_RESOURCE_LIMITS": {
+        "score": 0,
+        "coverage": "low",
+        "evidence": []
+      },
+      "GENERAL_GO_SECURITY_TRAPS": {
+        "score": 3,
+        "coverage": "low",
+        "evidence": [
+          {
+            "check_id": "GO-TRAP-001",
+            "hits": [
+              "file_path_contains"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
